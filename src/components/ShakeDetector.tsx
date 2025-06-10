@@ -59,7 +59,9 @@ export const ShakeDetector: React.FC<ShakeDetectorProps> = ({
 
     const initShake = async (): Promise<(() => void) | undefined> => {
       try {
-        const ShakeJS = (await import("shake.js")).default;
+        // Dynamic import with proper error handling
+        const shakeModule = await import("shake.js");
+        const ShakeJS = shakeModule.default || shakeModule;
 
         shake = new ShakeJS({
           threshold,

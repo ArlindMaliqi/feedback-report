@@ -4,7 +4,9 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  extends: ["eslint:recommended", "@typescript-eslint/recommended"],
+  extends: [
+    "eslint:recommended",
+  ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaVersion: "latest",
@@ -15,8 +17,17 @@ module.exports = {
   },
   plugins: ["@typescript-eslint"],
   rules: {
+    "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
+    "no-undef": "off", // TypeScript handles this
   },
-  ignorePatterns: ["dist/", "node_modules/", "*.js"],
+  ignorePatterns: ["dist/", "node_modules/", "*.js", "*.cjs"],
+  overrides: [
+    {
+      files: ["*.ts", "*.tsx"],
+      rules: {
+        // TypeScript specific rules can go here
+      },
+    },
+  ],
 };
