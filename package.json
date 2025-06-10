@@ -1,0 +1,60 @@
+{
+  "name": "@esrxc/feedback-report",
+  "version": "1.0.0",
+  "description": "A typesafe React feedback widget with shake detection and customizable UI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": false,
+  "publishConfig": { 
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsc",
+    "clean": "rimraf dist",
+    "prepare": "npm run build",
+    "test": "jest",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "feedback",
+    "react",
+    "typescript",
+    "widget",
+    "shake-detection",
+    "bug-report"
+  ],
+  "author": "ArlindMaliqi",
+  "license": "MIT",
+  "dependencies": {
+    "shake.js": "^1.2.2"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "rimraf": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArlindMaliqi/feedback-report.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
