@@ -1,6 +1,6 @@
 {
   "name": "react-feedback-report-widget",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A typesafe React feedback widget with shake detection and customizable UI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

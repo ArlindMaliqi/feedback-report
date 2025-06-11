@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.1.0...v1.2.0) (2025-06-11)
+
+
+### Features
+
+* add comprehensive modal styling customization system ([b39bbcf](https://github.com/ArlindMaliqi/feedback-report/commit/b39bbcf65fbb94ac268daed09da656a42858a8d7))
+
 # [1.1.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.0.0...v1.1.0) (2025-06-10)
 
 
