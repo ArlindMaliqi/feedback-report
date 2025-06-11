@@ -77,6 +77,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     overlayClassName = "",
   } = styles;
 
+  // All hooks must be called before any early returns
   useEffect(() => {
     if (!isModalOpen) {
       setMessage("");
@@ -84,14 +85,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     }
   }, [isModalOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await submitFeedback(message, type);
-  };
-
-  if (!isModalOpen) return null;
-
-  // Memoized style objects for better performance
+  // Memoized style objects for better performance - moved before early return
   const overlayStyle = React.useMemo(
     () => ({
       position: "fixed" as const,
@@ -249,6 +243,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     },
     [isSubmitting, message, buttonStyles.primaryBackgroundColor]
   );
+
+  const handleSubmit = React.useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      await submitFeedback(message, type);
+    },
+    [submitFeedback, message, type]
+  );
+
+  // Early return AFTER all hooks have been called
+  if (!isModalOpen) return null;
 
   return (
     <div
