@@ -69,6 +69,10 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Create distribution archive
+        run: |
+          tar -czf dist.tar.gz -C dist .
+
       - name: Verify package integrity
         run: npm audit signatures
 

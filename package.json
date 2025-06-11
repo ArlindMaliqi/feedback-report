@@ -22,7 +22,9 @@
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "release": "semantic-release",
-    "publish:npm": "npm publish --access=public"
+    "publish:npm": "npm publish --access=public",
+    "pack:dist": "tar -czf dist.tar.gz -C dist .",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "feedback",

@@ -25,6 +25,12 @@ export type {
   FeedbackContextType,
   FeedbackConfig,
   ApiResponse,
+  FeedbackModalStyles,
+  FeedbackModalOverlayStyles,
+  FeedbackModalContentStyles,
+  FeedbackModalFormStyles,
+  FeedbackModalButtonStyles,
+  FeedbackModalErrorStyles,
 } from "./types";
 
 // Utilities
@@ -41,7 +47,7 @@ import { FeedbackProvider } from "./components/FeedbackProvider";
 import { FeedbackButton } from "./components/FeedbackButton";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { ShakeDetector } from "./components/ShakeDetector";
-import type { FeedbackConfig } from "./types";
+import type { FeedbackConfig, FeedbackModalStyles } from "./types";
 
 /**
  * Props for the FeedbackWidget component
@@ -55,6 +61,8 @@ interface FeedbackWidgetProps {
   enableShakeDetection?: boolean;
   /** Props to pass to the FeedbackButton component */
   buttonProps?: React.ComponentProps<typeof FeedbackButton>;
+  /** Custom styling options for the modal */
+  modalStyles?: FeedbackModalStyles;
 }
 
 /**
@@ -69,6 +77,7 @@ interface FeedbackWidgetProps {
  * @param props.showButton - Whether to display the feedback button
  * @param props.enableShakeDetection - Whether to enable shake-to-feedback
  * @param props.buttonProps - Customization props for the feedback button
+ * @param props.modalStyles - Custom styling options for the modal
  *
  * @example
  * ```typescript
@@ -82,7 +91,7 @@ interface FeedbackWidgetProps {
  *   );
  * }
  *
- * // Advanced configuration
+ * // Advanced configuration with custom styling
  * function App() {
  *   const feedbackConfig = {
  *     apiEndpoint: '/api/feedback',
@@ -90,11 +99,25 @@ interface FeedbackWidgetProps {
  *     collectUrl: true
  *   };
  *
+ *   const modalStyles = {
+ *     content: {
+ *       backgroundColor: "#f8f9fa",
+ *       borderRadius: "12px",
+ *       fontFamily: "Inter, sans-serif"
+ *     },
+ *     buttons: {
+ *       primaryBackgroundColor: "#28a745",
+ *       primaryHoverBackgroundColor: "#218838",
+ *       buttonBorderRadius: "6px"
+ *     }
+ *   };
+ *
  *   return (
  *     <div>
  *       <YourAppContent />
  *       <FeedbackWidget
  *         config={feedbackConfig}
+ *         modalStyles={modalStyles}
  *         buttonProps={{
  *           position: "bottom-left",
  *           backgroundColor: "#ff6b6b",
@@ -111,18 +134,20 @@ interface FeedbackWidgetProps {
  * - Automatically includes modal, button, and shake detection
  * - Highly customizable through props and configuration
  * - Perfect for quick integration with sensible defaults
+ * - Supports comprehensive modal styling customization
  */
 export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
   config = {},
   showButton = true,
   enableShakeDetection = true,
   buttonProps = {},
+  modalStyles = {},
 }) => {
   return (
     <FeedbackProvider config={config}>
       {enableShakeDetection && <ShakeDetector />}
       {showButton && <FeedbackButton {...buttonProps} />}
-      <FeedbackModal />
+      <FeedbackModal styles={modalStyles} />
     </FeedbackProvider>
   );
 };
