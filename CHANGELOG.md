@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/ArlindMaliqi/feedback-report/compare/v1.2.0...v1.2.1) (2025-06-11)
+
+
+### Bug Fixes
+
+* function layers updated ([565a655](https://github.com/ArlindMaliqi/feedback-report/commit/565a6558880e364797cdbfd70f31f29d78569308))
+
 # [1.2.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.1.0...v1.2.0) (2025-06-11)
 
 
