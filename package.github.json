@@ -1,0 +1,48 @@
+{
+  "name": "@ArlindMaliqi/react-feedback-report-widget",
+  "version": "1.2.1",
+  "description": "A typesafe React feedback widget with shake detection and customizable UI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": false,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArlindMaliqi/feedback-report.git"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "feedback",
+    "react",
+    "typescript",
+    "widget",
+    "shake-detection",
+    "bug-report",
+    "user-feedback",
+    "feedback-widget",
+    "react-component"
+  ],
+  "author": {
+    "name": "ArlindMaliqi",
+    "url": "https://github.com/ArlindMaliqi"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "shake.js": "^1.2.2"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "bugs": {
+    "url": "https://github.com/ArlindMaliqi/feedback-report/issues"
+  },
+  "homepage": "https://github.com/ArlindMaliqi/feedback-report#readme"
+}

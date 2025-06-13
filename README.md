@@ -2,6 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/react-feedback-report-widget.svg)](https://badge.fury.io/js/react-feedback-report-widget)
 [![Release](https://github.com/ArlindMaliqi/feedback-report/actions/workflows/release.yml/badge.svg)](https://github.com/ArlindMaliqi/feedback-report/actions/workflows/release.yml)
+[![GitHub Package Registry](https://img.shields.io/badge/GitHub%20Package%20Registry-published-blue)](https://github.com/ArlindMaliqi/feedback-report/packages)
 
 ## Overview
 
@@ -17,10 +18,31 @@ The React Feedback Report Widget is a TypeScript-first feedback collection tool 
 
 ## Installation
 
-To install the React Feedback Report Widget, run the following command:
+### From NPM Registry
+
+To install the React Feedback Report Widget from NPM, run the following command:
 
 ```bash
 npm install react-feedback-report-widget
+```
+
+### From GitHub Packages
+
+You can also install directly from GitHub Packages:
+
+```bash
+# Configure npm to use GitHub Packages for @ArlindMaliqi scope
+echo "@ArlindMaliqi:registry=https://npm.pkg.github.com" >> .npmrc
+
+# Install the package
+npm install @ArlindMaliqi/react-feedback-report-widget
+```
+
+Or create a `.npmrc` file in your project root:
+
+```
+@ArlindMaliqi:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
 ```
 
 ## Usage
@@ -72,3 +94,12 @@ Contributions are welcome! Please follow conventional commit format for your com
 ## License
 
 This project is licensed under the MIT License.
+
+## Package Availability
+
+This package is available on both:
+
+- **NPM Registry**: `react-feedback-report-widget`
+- **GitHub Packages**: `@ArlindMaliqi/react-feedback-report-widget`
+
+Both packages contain identical functionality - choose the one that fits your workflow better.
