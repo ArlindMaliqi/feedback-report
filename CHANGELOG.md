@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/ArlindMaliqi/feedback-report/compare/v1.3.0...v1.3.1) (2025-06-13)
+
+
+### Bug Fixes
+
+* resolve React hooks order violation and setup GitHub Packages publishing ([3489495](https://github.com/ArlindMaliqi/feedback-report/commit/3489495665be6e2f5467236b370284f1ce3b30d7))
+
 # [1.3.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.2.1...v1.3.0) (2025-06-13)
 
 
