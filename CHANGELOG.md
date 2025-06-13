@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.2.1...v1.3.0) (2025-06-13)
+
+
+### Features
+
+* add GitHub Packages publishing and enhance release workflow ([ae9058e](https://github.com/ArlindMaliqi/feedback-report/commit/ae9058e5022ad921e4c9199bb4dffb80293ebc72))
+
 ## [1.2.1](https://github.com/ArlindMaliqi/feedback-report/compare/v1.2.0...v1.2.1) (2025-06-11)
 
 
