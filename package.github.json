@@ -9,10 +9,6 @@
     "registry": "https://npm.pkg.github.com",
     "access": "public"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ArlindMaliqi/feedback-report.git"
-  },
   "files": [
     "dist",
     "README.md",
@@ -40,6 +36,10 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArlindMaliqi/feedback-report.git"
   },
   "bugs": {
     "url": "https://github.com/ArlindMaliqi/feedback-report/issues"

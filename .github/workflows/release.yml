@@ -99,7 +99,6 @@ jobs:
         with:
           node-version: "lts/*"
           registry-url: "https://npm.pkg.github.com"
-          scope: "@ArlindMaliqi"
 
       - name: Install dependencies
         run: npm install
@@ -107,7 +106,12 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Configure for GitHub Packages
+        run: |
+          cp package.github.json package.json
+          echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> .npmrc
+
       - name: Publish to GitHub Packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish
+        run: npm publish --access public
