@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/ArlindMaliqi/feedback-report/compare/v2.0.0...v2.1.0) (2025-06-14)
+
+
+### Features
+
+* Add missing dependency and optimize webpack externals configuration ([2981af8](https://github.com/ArlindMaliqi/feedback-report/commit/2981af813597f51927c317c8bc443a3ad6a36764))
+
 # [2.0.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.5.0...v2.0.0) (2025-06-14)
 
 
