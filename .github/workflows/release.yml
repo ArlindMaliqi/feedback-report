@@ -4,124 +4,79 @@ on:
   push:
     branches:
       - main
-      - next
-      - beta
-      - alpha
   pull_request:
     branches:
       - main
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  id-token: write
-  packages: write
-  repository-projects: write
-
 jobs:
   test:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run type check
+      - name: Type checking
         run: npm run typecheck
 
-      - name: Run linting
+      - name: Lint
         run: npm run lint
 
       - name: Run tests
-        run: npm test -- --passWithNoTests
+        run: npm run test
 
-      - name: Build package
+      - name: Build
         run: npm run build
 
   release:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next' || github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/alpha')
+    if: github.ref == 'refs/heads/main'
+    
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build package
+      - name: Build
         run: npm run build
 
-      - name: Create distribution archive
-        run: |
-          tar -czf dist.tar.gz -C dist .
-
-      - name: Verify package integrity
-        run: npm audit signatures
-
-      - name: Release
+      - name: Release to NPM
         env:
-          GITHUB_TOKEN: ${{ secrets.WRITE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GH_TOKEN: ${{ secrets.WRITE_TOKEN }}
         run: npm run release
 
-  publish-github-packages:
-    needs: release
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Build for GitHub Packages
+        run: npm run build:github
 
-      - name: Set up Node.js for GitHub Packages
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@ArlindMaliqi"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build package
-        run: npm run build
-
-      - name: Create GitHub Package configuration with synchronized version
+      - name: Setup GitHub Packages registry
         run: |
-          # Extract version from main package.json
-          NPM_VERSION=$(node -p "require('./package.json').version")
-          echo "Using version: $NPM_VERSION"
-          
-          # Create GitHub package.json with the same version
-          jq ".name = \"@ArlindMaliqi/react-feedback-report-widget\" | .publishConfig.registry = \"https://npm.pkg.github.com\" | .version = \"$NPM_VERSION\"" package.json > package.github.json
-          cp package.github.json package.json
-          cat package.json
-          
-          # Set up proper npmrc
-          cp .npmrc.github .npmrc
+          echo "@ArlindMaliqi:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
       - name: Publish to GitHub Packages
+        run: npm publish package.github.json --registry=https://npm.pkg.github.com
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.WRITE_TOKEN }}
-        run: npm publish --access public
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

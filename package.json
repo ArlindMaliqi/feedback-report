@@ -18,10 +18,12 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "npm run clean && webpack --mode=production",
+    "build": "npm run clean && npm run build:main && npm run build:esm",
+    "build:main": "NODE_ENV=production webpack --mode=production --env format=umd",
+    "build:esm": "NODE_ENV=production webpack --mode=production --env format=esm",
     "clean": "rimraf dist",
     "prepare": "npm run build",
-    "test": "jest",
+    "test": "NODE_ENV=test jest",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "release": "semantic-release",
@@ -39,7 +41,7 @@
     "analyze:webpack": "npm run build && npx webpack-bundle-analyzer dist/stats.json",
     "perf:audit": "npm run build && npx lighthouse-ci autorun",
     "size-limit": "npx size-limit",
-    "build:analyze": "npm run clean && ANALYZE=true webpack --mode=production",
+    "build:analyze": "npm run clean && NODE_ENV=production ANALYZE=true webpack --mode=production --env format=umd",
     "size-check": "npm run build && npx bundlesize",
     "build:core": "webpack --entry ./src/core/index.ts --output-filename core.js --mode=production",
     "build:minimal": "webpack --entry ./src/components/MinimalFeedbackWidget.tsx --output-filename minimal.js --mode=production",
@@ -50,7 +52,7 @@
     "analyze:size": "npx bundlesize",
     "validate:exports": "npx publint",
     "validate:types": "npx tsc --noEmit --skipLibCheck",
-    "optimize:build": "npm run clean && NODE_ENV=production webpack --mode=production --optimization-minimize",
+    "optimize:build": "npm run clean && NODE_ENV=production webpack --mode=production --optimization-minimize --env format=umd",
     "benchmark": "node scripts/benchmark.js"
   },
   "keywords": [
