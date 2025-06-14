@@ -23,7 +23,7 @@
     "build:esm": "NODE_ENV=production webpack --mode=production --env format=esm",
     "clean": "rimraf dist",
     "prepare": "npm run build",
-    "test": "NODE_ENV=test jest",
+    "test": "NODE_ENV=test jest --passWithNoTests",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "release": "semantic-release",
