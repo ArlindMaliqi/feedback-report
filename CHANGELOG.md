@@ -1,3 +1,21 @@
+# [2.0.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.5.0...v2.0.0) (2025-06-14)
+
+
+### Bug Fixes
+
+* resolve TypeScript errors and improve type safety in UserIdentityFields ([6727d67](https://github.com/ArlindMaliqi/feedback-report/commit/6727d6707c8249273bb07e014b09bafbcdf66cba))
+
+
+### Features
+
+* Add comprehensive integrations and developer experience improvements ([d1f79ef](https://github.com/ArlindMaliqi/feedback-report/commit/d1f79ef97ea6f5aa349886d51787a0166151e8ed))
+* add comprehensive JSDoc documentation and clean up TypeScript errors ([170236e](https://github.com/ArlindMaliqi/feedback-report/commit/170236e13871f450f73de340b73ca45eb21ad6cc))
+
+
+### BREAKING CHANGES
+
+* Updated TypeScript types may require type assertion updates in consuming applications
+
 # [1.5.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.4.0...v1.5.0) (2025-06-14)
 
 ### Features
