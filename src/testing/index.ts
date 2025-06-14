@@ -1,11 +1,12 @@
 /**
  * Testing utilities for the feedback system
  * @module testing
+ * @version 2.0.0
+ * @author ArlindMaliqi
+ * @since 1.0.0
  */
 import React, { ReactNode } from 'react';
-import { FeedbackProvider } from '../components/FeedbackProvider';
-import { ThemeProvider } from '../contexts/ThemeContext';
-import type { FeedbackConfig, Feedback, ThemePreference, FeedbackProviderProps } from '../types';
+import type { FeedbackConfig, Feedback, ThemePreference } from '../types';
 
 /**
  * Props for the test wrapper component
@@ -24,117 +25,22 @@ interface TestWrapperProps {
 }
 
 /**
- * Test props that can be passed to FeedbackProvider for testing purposes
- */
-interface FeedbackProviderTestProps {
-  initialFeedback?: Feedback[];
-  modalOpen?: boolean;
-}
-
-// Extend the imported FeedbackProviderProps interface for testing
-interface TestFeedbackProviderProps extends FeedbackProviderProps {
-  _testProps?: FeedbackProviderTestProps;
-}
-
-/**
- * Wraps components with the necessary providers for testing
- * 
- * This utility makes it easier to test components that depend on
- * the feedback context or theme context.
- * 
- * @param props - Component props
- * @returns Wrapped component tree
- */
-export const TestWrapper: React.FC<TestWrapperProps> = ({
-  children,
-  mockConfig = {},
-  theme = 'light',
-  initialFeedback = [],
-  modalOpen = false
-}) => {
-  // Create base config with common testing defaults
-  const testConfig: FeedbackConfig = {
-    // Mock API endpoint that won't actually make network requests
-    apiEndpoint: 'http://localhost/mock-api',
-    // Disable API calls by default in tests
-    disableNetworkRequests: true,
-    // Enable offline support for testing that flow
-    enableOfflineSupport: true,
-    // Other default settings
-    ...mockConfig,
-    // Add testing flag
-    isTestEnvironment: true
-  };
-
-  // Create the component tree correctly
-  return React.createElement(
-    ThemeProvider, 
-    { initialTheme: theme, children: 
-      React.createElement(
-        FeedbackProvider,
-        { 
-          config: testConfig,
-          _testProps: { initialFeedback, modalOpen } as FeedbackProviderTestProps,
-          children
-        }
-      )
-    }
-  );
-};
-
-/**
  * Creates a mock feedback object for testing
  */
 export const createMockFeedback = (): Feedback => ({
   id: 'test-feedback-1',
   message: 'This is a test feedback',
   type: 'bug',
-  timestamp: new Date(), // Fixed: use new Date() instead of Date.now()
+  timestamp: new Date(),
   votes: 0,
   status: 'open',
   priority: 'medium'
 });
 
 /**
- * Creates a jest mock for the useFeedback hook
- * 
- * @param overrides - Values to override in the default mock
- * @returns A mock implementation of the useFeedback hook
- * 
- * @example
- * ```tsx
- * // In your test file:
- * jest.mock('react-feedback-report-widget', () => ({
- *   ...jest.requireActual('react-feedback-report-widget'),
- *   useFeedback: createMockUseFeedback({
- *     isModalOpen: true,
- *     feedbacks: [createMockFeedback()]
- *   })
- * }));
- * ```
- */
-export const createMockUseFeedback = (overrides: Partial<ReturnType<typeof import('../hooks/useFeedback')['useFeedback']>> = {}) => {
-  return jest.fn().mockReturnValue({
-    isModalOpen: false,
-    feedbacks: [],
-    openModal: jest.fn(),
-    closeModal: jest.fn(),
-    submitFeedback: jest.fn(),
-    isSubmitting: false,
-    error: null,
-    isOffline: false,
-    syncOfflineFeedback: jest.fn(),
-    voteFeedback: jest.fn(),
-    categories: [],
-    ...overrides
-  });
-};
-
-/**
  * Creates a mock feedback API response
  */
 export const createMockApiResponse = (success: boolean = true, data?: any) => {
-  // Mock implementation - options parameter removed as it was unused
   return Promise.resolve({
     ok: success,
     json: () => Promise.resolve(data || { success }),
@@ -144,41 +50,15 @@ export const createMockApiResponse = (success: boolean = true, data?: any) => {
 };
 
 /**
- * Setup function for React Testing Library tests
- * 
- * @param ui - The UI component to render
- * @param options - Test wrapper options
- * @returns React Testing Library render result with additional helper methods
- * 
- * @example
- * ```tsx
- * import { setupTest } from 'react-feedback-report-widget/testing';
- * 
- * test('component works with feedback', () => {
- *   const { getByText, openFeedbackModal } = setupTest(<MyComponent />);
- *   
- *   // Open the feedback modal programmatically
- *   openFeedbackModal();
- *   
- *   expect(getByText('Send Feedback')).toBeInTheDocument();
- * });
- * ```
+ * Mock for testing purposes
  */
-export const setupTest = (
-  ui: React.ReactElement,
-  options: Omit<TestWrapperProps, 'children'> = {}
-) => {
-  // This function is meant to be used with @testing-library/react
-  // We define it here but in the actual implementation it would require
-  // the testing library to be installed.
-  
-  // Placeholder implementation
-  return {
-    openFeedbackModal: () => console.log('Calling openFeedbackModal would trigger the feedback modal in a test'),
-    submitMockFeedback: (message: string, type?: Feedback['type']) => 
-      console.log(`Calling submitMockFeedback would submit feedback: ${message} (${type || 'other'})`)
-  };
+export const mockFeedbackSubmission = () => {
+  return jest.fn().mockResolvedValue({ success: true });
 };
 
-// Re-export mocks to maintain the same API
-export * from './mocks';
+/**
+ * Mock feedback provider for testing
+ */
+export const createMockFeedbackProvider = ({ children }: { children: ReactNode }) => {
+  return React.createElement('div', { 'data-testid': 'mock-feedback-provider' }, children);
+};

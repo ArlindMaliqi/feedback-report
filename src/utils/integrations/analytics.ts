@@ -205,7 +205,8 @@ export const processVoteAnalytics = async (
     id: 'another-mock',
     message: 'Another mock feedback',
     type: 'feature',
-    timestamp: new Date(), // Fixed: use new Date()
+    timestamp: new Date(),
+    status: 'open', // Add missing status property
     votes: 5
   };
 

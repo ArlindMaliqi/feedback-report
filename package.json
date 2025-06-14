@@ -42,7 +42,16 @@
     "build:analyze": "npm run clean && ANALYZE=true webpack --mode=production",
     "size-check": "npm run build && npx bundlesize",
     "build:core": "webpack --entry ./src/core/index.ts --output-filename core.js --mode=production",
-    "build:minimal": "webpack --entry ./src/components/MinimalFeedbackWidget.tsx --output-filename minimal.js --mode=production"
+    "build:minimal": "webpack --entry ./src/components/MinimalFeedbackWidget.tsx --output-filename minimal.js --mode=production",
+    "docs:generate": "jsdoc -c jsdoc.config.js",
+    "docs:serve": "npx http-server docs/api -p 8080",
+    "analyze:bundle": "webpack-bundle-analyzer dist/stats.json",
+    "analyze:treeshake": "npx agadoo dist/index.esm.js",
+    "analyze:size": "npx bundlesize",
+    "validate:exports": "npx publint",
+    "validate:types": "npx tsc --noEmit --skipLibCheck",
+    "optimize:build": "npm run clean && NODE_ENV=production webpack --mode=production --optimization-minimize",
+    "benchmark": "node scripts/benchmark.js"
   },
   "keywords": [
     "react",
@@ -160,7 +169,12 @@
     "typescript": "^5.3.0",
     "webpack": "^5.99.9",
     "webpack-bundle-analyzer": "^4.10.2",
-    "webpack-cli": "^6.0.1"
+    "webpack-cli": "^6.0.1",
+    "jsdoc": "^4.0.0",
+    "jsdoc-plugin-typescript": "^2.2.1",
+    "agadoo": "^3.0.0",
+    "publint": "^0.2.0",
+    "bundlesize": "^0.18.1"
   },
   "repository": {
     "type": "git",

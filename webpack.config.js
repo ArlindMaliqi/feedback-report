@@ -1,20 +1,47 @@
-const path = require('path');
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-const CompressionPlugin = require('compression-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
+/**
+ * @fileoverview Webpack configuration optimized for tree-shaking and performance
+ * @author ArlindMaliqi
+ * @version 2.0.0
+ */
 
-module.exports = {
-  entry: './src/index.ts',
+const path = require('path');
+const TerserPlugin = require('terser-webpack-plugin');
+const CompressionPlugin = require('compression-webpack-plugin');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+
+const isProduction = process.env.NODE_ENV === 'production';
+const shouldAnalyze = process.env.ANALYZE === 'true';
+
+/**
+ * Base webpack configuration
+ */
+const baseConfig = {
+  mode: isProduction ? 'production' : 'development',
+  
+  entry: {
+    index: './src/index.tsx',
+    'index.esm': './src/index.tsx'
+  },
   
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'index.js',
-    library: 'ReactFeedbackWidget',
-    libraryTarget: 'umd',
-    clean: true,
-    globalObject: 'this'
+    filename: '[name].js',
+    library: {
+      name: 'ReactFeedbackReportWidget',
+      type: 'umd',
+      export: 'default'
+    },
+    globalObject: 'this',
+    clean: true
   },
-
+  
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js', '.jsx'],
+    alias: {
+      '@': path.resolve(__dirname, 'src')
+    }
+  },
+  
   externals: {
     react: {
       commonjs: 'react',
@@ -27,60 +54,23 @@ module.exports = {
       commonjs2: 'react-dom',
       amd: 'react-dom',
       root: 'ReactDOM'
-    },
-    'sonner': {
-      commonjs: 'sonner',
-      commonjs2: 'sonner',
-      amd: 'sonner',
-      root: 'sonner',
-      optional: true
     }
   },
-
-  optimization: {
-    minimize: true,
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          compress: {
-            drop_console: true,
-            drop_debugger: true,
-            pure_funcs: ['console.log', 'console.info', 'console.debug'],
-            passes: 2
-          },
-          mangle: {
-            safari10: true
-          }
-        }
-      })
-    ]
-  },
-
-  resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
-    alias: {
-      '@': path.resolve(__dirname, 'src')
-    }
-  },
-
+  
   module: {
     rules: [
       {
         test: /\.tsx?$/,
         use: [
           {
-            loader: 'babel-loader',
+            loader: 'ts-loader',
             options: {
-              presets: [
-                ['@babel/preset-env', {
-                  targets: {
-                    browsers: ['> 1%', 'last 2 versions', 'not ie <= 11']
-                  },
-                  modules: false
-                }],
-                '@babel/preset-react',
-                '@babel/preset-typescript'
-              ]
+              transpileOnly: isProduction,
+              compilerOptions: {
+                declaration: true,
+                declarationDir: './dist',
+                outDir: './dist'
+              }
             }
           }
         ],
@@ -88,28 +78,101 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: ['style-loader', 'css-loader'],
+        sideEffects: false
       }
     ]
   },
-
+  
+  optimization: {
+    minimize: isProduction,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: isProduction,
+            drop_debugger: isProduction,
+            pure_funcs: isProduction ? ['console.log', 'console.info', 'console.debug'] : []
+          },
+          mangle: {
+            keep_classnames: false,
+            keep_fnames: false
+          },
+          output: {
+            comments: false
+          }
+        },
+        extractComments: false
+      })
+    ],
+    
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+          priority: 10
+        },
+        common: {
+          name: 'common',
+          minChunks: 2,
+          chunks: 'all',
+          priority: 5
+        }
+      }
+    },
+    
+    sideEffects: false,
+    usedExports: true,
+    innerGraph: true
+  },
+  
   plugins: [
-    new CompressionPlugin({
-      algorithm: 'gzip',
-      test: /\.(js|css|html|svg)$/,
-      threshold: 8192,
-      minRatio: 0.8
-    }),
-    ...(process.env.ANALYZE ? [new BundleAnalyzerPlugin({
-      analyzerMode: 'server',
-      openAnalyzer: true
-    })] : [])
+    ...(isProduction ? [
+      new CompressionPlugin({
+        algorithm: 'gzip',
+        test: /\.(js|css|html|svg)$/,
+        threshold: 8192,
+        minRatio: 0.8
+      })
+    ] : []),
+    
+    ...(shouldAnalyze ? [
+      new BundleAnalyzerPlugin({
+        analyzerMode: 'static',
+        reportFilename: 'bundle-analysis.html',
+        openAnalyzer: false
+      })
+    ] : [])
   ],
-
-  devtool: 'source-map',
   
   stats: {
-    errorDetails: true,
-    warnings: true
+    assets: true,
+    modules: false,
+    chunks: false,
+    children: false,
+    entrypoints: false
   }
 };
+
+/**
+ * ESM-specific configuration
+ */
+const esmConfig = {
+  ...baseConfig,
+  entry: './src/index.tsx',
+  output: {
+    ...baseConfig.output,
+    filename: 'index.esm.js',
+    library: {
+      type: 'module'
+    }
+  },
+  experiments: {
+    outputModule: true
+  }
+};
+
+module.exports = [baseConfig, esmConfig];

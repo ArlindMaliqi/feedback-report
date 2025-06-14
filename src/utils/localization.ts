@@ -1,166 +1,246 @@
 /**
- * Localization utilities for internationalization support
- * @module localization
+ * @fileoverview Optimized localization utilities with tree-shaking support
+ * @module utils/localization
+ * @version 2.0.0
+ * @author ArlindMaliqi
+ * @since 1.2.0
  */
+
 import type { LocalizationConfig } from '../types';
 
 /**
- * Default English messages
+ * Supported locale codes - reduced to requested languages
+ * @readonly
  */
-export const DEFAULT_MESSAGES: Record<string, Record<string, string>> = {
-  en: {
-    // Feedback modal
-    'modal.title': 'Send Feedback',
-    'modal.description': 'We value your feedback to improve our product.',
-    'modal.submit': 'Submit Feedback',
-    'modal.submitting': 'Submitting...',
-    'modal.cancel': 'Cancel',
-    'modal.offline.notice': 'You are currently offline. Your feedback will be saved locally and submitted when you\'re back online.',
-    'modal.characterCount': '{count}/1000 characters',
-    
-    // Form fields
-    'field.required': 'Required',
-    'field.message.label': 'Message',
-    'field.message.placeholder': 'Please describe your feedback...',
-    'field.type.label': 'Type',
-    'field.category.label': 'Category',
-    'field.subcategory.label': 'Subcategory',
-    'field.subcategory.placeholder': 'Select a subcategory (optional)',
-    
-    // Types
-    'type.bug': 'Bug Report',
-    'type.feature': 'Feature Request',
-    'type.improvement': 'Improvement',
-    'type.other': 'Other',
-    
-    // User identity
-    'identity.name.label': 'Name',
-    'identity.email.label': 'Email',
-    'identity.remember': 'Remember my information for future feedback',
-    'identity.privacy': 'Your information will only be used to follow up on your feedback if necessary.',
-    
-    // Attachments
-    'attachments.title': 'Attachments',
-    'attachments.drag': 'Drag files here or click to attach ({count}/{max})',
-    'attachments.maxReached': 'Maximum number of attachments reached',
-    'attachments.choose': 'Choose Files',
-    'attachments.capture': 'Capture Screenshot',
-    'attachments.allowedTypes': 'Allowed types: {types}',
-    'attachments.maxSize': 'Max size: {size}',
-    
-    // Validation & errors
-    'validation.required': 'This field is required',
-    'validation.maxLength': 'Maximum length exceeded',
-    'validation.email': 'Please enter a valid email address',
-    'validation.fileSize': 'File too large. Maximum size is {size}.',
-    'validation.fileType': 'Invalid file type. Allowed types: {types}',
-    
-    // Notifications
-    'notification.success': 'Feedback submitted successfully!',
-    'notification.offline': 'Feedback saved locally and will be submitted when you\'re back online',
-    'notification.error': 'Failed to submit feedback: {message}',
-    'notification.sync': 'Syncing {count} pending feedback items...',
-    'notification.syncComplete': 'Feedback synchronization complete',
-    
-    // Voting
-    'vote.button': 'Upvote',
-    'vote.voted': 'Voted',
-    'vote.alreadyVoted': 'You have already voted for this feedback'
-  }
+export const SUPPORTED_LOCALES = [
+  'en', 'de', 'es', 'fr', 'nl'
+] as const;
+
+/**
+ * RTL (Right-to-Left) language codes
+ * @readonly
+ */
+export const RTL_LOCALES = ['ar', 'he', 'fa', 'ur'] as const;
+
+/**
+ * Type for supported locale codes
+ */
+export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
+
+/**
+ * Translation key-value mapping
+ */
+export interface TranslationMap {
+  [key: string]: string;
+}
+
+/**
+ * Locale-specific translations structure
+ */
+export interface LocaleTranslations {
+  [locale: string]: TranslationMap;
+}
+
+/**
+ * Default English translations (always included to minimize bundle)
+ * @readonly
+ */
+const DEFAULT_TRANSLATIONS: TranslationMap = {
+  'feedback.title': 'Send Feedback',
+  'feedback.submit': 'Submit',
+  'feedback.cancel': 'Cancel',
+  'feedback.placeholder': 'Tell us what\'s on your mind...',
+  'feedback.categories.bug': 'Bug Report',
+  'feedback.categories.feature': 'Feature Request',
+  'feedback.categories.improvement': 'Improvement',
+  'feedback.categories.question': 'Question',
+  'feedback.categories.other': 'Other',
+  'feedback.success': 'Thank you for your feedback!',
+  'feedback.error': 'Something went wrong. Please try again.',
+  'feedback.error.empty': 'Please enter your feedback',
+  'feedback.required': 'This field is required',
+  'feedback.file.tooLarge': 'File size exceeds the limit',
+  'feedback.file.invalidType': 'Invalid file type',
+  'feedback.file.upload': 'Upload file',
+  'feedback.file.remove': 'Remove file',
+  'feedback.votes.vote': 'Vote',
+  'feedback.votes.voted': 'Voted',
+  'feedback.user.name': 'Name',
+  'feedback.user.email': 'Email',
+  'feedback.priority.low': 'Low',
+  'feedback.priority.medium': 'Medium',
+  'feedback.priority.high': 'High',
+  'feedback.priority.critical': 'Critical',
+  'notification.success': 'Feedback submitted successfully!',
+  'notification.error': 'Error occurred',
+  'notification.sync': 'Syncing {count} pending feedback items',
+  'notification.syncComplete': 'All feedback synced successfully',
+  'notification.offline': 'Your feedback will be saved and sent when you\'re back online',
+  'notification.deleted': 'Feedback deleted successfully',
+  'notification.deleteError': 'Failed to delete feedback'
 };
 
 /**
- * Additional translations (to be expanded)
- */
-export const TRANSLATIONS: Record<string, Record<string, string>> = {
-  es: {
-    'modal.title': 'Enviar Comentarios',
-    'modal.description': 'Valoramos sus comentarios para mejorar nuestro producto.',
-    'modal.submit': 'Enviar Comentarios',
-    'modal.submitting': 'Enviando...',
-    'modal.cancel': 'Cancelar',
-    // More translations to be added
-  },
-  fr: {
-    'modal.title': 'Envoyer des Commentaires',
-    'modal.description': 'Nous apprécions vos commentaires pour améliorer notre produit.',
-    'modal.submit': 'Envoyer',
-    'modal.submitting': 'Envoi en cours...',
-    'modal.cancel': 'Annuler',
-    // More translations to be added
-  },
-  de: {
-    'modal.title': 'Feedback senden',
-    'modal.description': 'Wir schätzen Ihr Feedback, um unser Produkt zu verbessern.',
-    'modal.submit': 'Feedback senden',
-    'modal.submitting': 'Wird gesendet...',
-    'modal.cancel': 'Abbrechen',
-    // More translations to be added
-  }
-};
-
-/**
- * All available messages, including default English and translations
- */
-export const ALL_MESSAGES: Record<string, Record<string, string>> = {
-  ...DEFAULT_MESSAGES,
-  ...TRANSLATIONS
-};
-
-/**
- * Creates a translation function based on the provided configuration
- * 
- * @param config - Localization configuration
- * @returns Function to translate message keys
- */
-export const createTranslator = (config: LocalizationConfig = { locale: 'en' }): ((key: string, params?: Record<string, string | number>) => string) => {
-  const { locale } = config;
-
-  if (typeof config.t === 'function') {
-    // Use custom translation function if provided
-    return config.t as (key: string, params?: Record<string, string | number>) => string;
-  }
-
-  // Use built-in translation system
-  const fallbackLocale = config.defaultLocale || 'en';
-
-  // Merge translations
-  const translations = {
-    ...(config.messages?.[fallbackLocale] || {}),
-    ...(config.messages?.[locale] || {})
-  };
-
-  // Create a type-safe messages object
-  const messages: Record<string, string> = {
-    ...(ALL_MESSAGES[fallbackLocale as keyof typeof ALL_MESSAGES] || {}),
-    ...(ALL_MESSAGES[locale as keyof typeof ALL_MESSAGES] || {}),
-    ...(config.messages?.[fallbackLocale] || {}),
-    ...(config.messages?.[locale] || {})
-  };
-  
-  // Return the translation function
-  return (key: string, params?: Record<string, string | number>): string => {
-    // Get the message from the messages object
-    let message = messages[key] || key;
-    
-    // Replace parameters if provided
-    if (params) {
-      Object.entries(params).forEach(([param, value]) => {
-        message = message.replace(new RegExp(`\\{${param}\\}`, 'g'), String(value));
-      });
-    }
-    
-    return message;
-  };
-};
-
-/**
- * Gets the text direction for a given locale
- * @param locale - The locale string
+ * Determines text direction for a given locale
+ * @param locale - The locale code to check
  * @returns Text direction ('ltr' or 'rtl')
+ * @since 1.2.0
  */
 export const getDirection = (locale: string): 'ltr' | 'rtl' => {
-  const rtlLocales = ['ar', 'he', 'fa', 'ur', 'yi', 'ji', 'iw', 'in', 'ku', 'ps', 'sd'];
-  const languageCode = locale.split('-')[0].toLowerCase();
-  return rtlLocales.includes(languageCode) ? 'rtl' : 'ltr';
+  return RTL_LOCALES.includes(locale as any) ? 'rtl' : 'ltr';
+};
+
+/**
+ * Validates if a locale is supported
+ * @param locale - The locale code to validate
+ * @returns Whether the locale is supported
+ * @since 1.2.0
+ */
+export const isValidLocale = (locale: string): locale is SupportedLocale => {
+  return SUPPORTED_LOCALES.includes(locale as SupportedLocale);
+};
+
+/**
+ * Gets the fallback locale for unsupported locales
+ * @param locale - The requested locale
+ * @param fallback - The fallback locale (defaults to 'en')
+ * @returns Valid locale code
+ * @since 1.2.0
+ */
+export const getFallbackLocale = (locale: string, fallback: string = 'en'): SupportedLocale => {
+  if (isValidLocale(locale)) return locale;
+  if (isValidLocale(fallback)) return fallback;
+  return 'en';
+};
+
+/**
+ * Interpolates variables in translation strings
+ * @param template - Template string with {{variable}} placeholders
+ * @param values - Object with variable values
+ * @returns Interpolated string
+ * @since 1.3.0
+ * 
+ * @example
+ * ```typescript
+ * interpolate('Hello, {{name}}!', { name: 'John' });
+ * // Returns: 'Hello, John!'
+ * ```
+ */
+export const interpolate = (template: string, values: Record<string, any> = {}): string => {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return values[key] !== undefined ? String(values[key]) : match;
+  });
+};
+
+/**
+ * Creates a translator function with optimized bundle size
+ * Only includes translations for the specified locale to minimize bundle size
+ * 
+ * @param config - Localization configuration
+ * @returns Translator function that always returns a string
+ * @since 2.0.0
+ */
+export const createTranslator = (config?: LocalizationConfig) => {
+  const locale = config?.locale || 'en';
+  const fallbackLocale = getFallbackLocale(config?.fallbackLocale || 'en');
+  
+  // Get translations for the current locale and fallback
+  const currentTranslations = config?.customTranslations?.[locale] || {};
+  const fallbackTranslations = config?.customTranslations?.[fallbackLocale] || {};
+  
+  // Merge translations with priority: current > fallback > default
+  const translations = {
+    ...DEFAULT_TRANSLATIONS,
+    ...fallbackTranslations,
+    ...currentTranslations
+  };
+
+  /**
+   * Translate a key with optional interpolation
+   * @param key - Translation key
+   * @param values - Values for interpolation
+   * @returns Translated string (always returns string)
+   */
+  return (key: string, values?: Record<string, any>): string => {
+    const template = translations[key] || key;
+    return values ? interpolate(template, values) : template;
+  };
+};
+
+/**
+ * Lazy loader for translation bundles
+ * Only loads translations when needed to optimize initial bundle size
+ * 
+ * @param locale - Locale to load
+ * @returns Promise with translation map
+ * @since 2.0.0
+ */
+export const loadTranslations = async (locale: SupportedLocale): Promise<TranslationMap> => {
+  // Return empty object if English (already included)
+  if (locale === 'en') {
+    return DEFAULT_TRANSLATIONS;
+  }
+
+  try {
+    // Dynamic import for tree-shaking
+    const module = await import(`../locales/${locale}.json`);
+    return module.default || module;
+  } catch (error) {
+    console.warn(`Failed to load translations for locale: ${locale}`, error);
+    return {};
+  }
+};
+
+/**
+ * Creates a translation bundle with only required locales
+ * This function helps reduce bundle size by only including needed translations
+ * 
+ * @param locales - Array of required locales
+ * @returns Promise with locale-specific translations
+ * @since 2.0.0
+ */
+export const createTranslationBundle = async (
+  locales: SupportedLocale[]
+): Promise<LocaleTranslations> => {
+  const bundle: LocaleTranslations = {
+    en: DEFAULT_TRANSLATIONS
+  };
+
+  // Load only the required locales - use Array.from to avoid downlevelIteration
+  const uniqueLocales = Array.from(new Set(locales)).filter(locale => locale !== 'en');
+  
+  const loadPromises = uniqueLocales.map(async (locale) => {
+    const translations = await loadTranslations(locale);
+    bundle[locale] = translations;
+  });
+
+  await Promise.all(loadPromises);
+  return bundle;
+};
+
+/**
+ * Optimized locale detection from browser/system
+ * @returns Detected locale code
+ * @since 2.0.0
+ */
+export const detectLocale = (): SupportedLocale => {
+  if (typeof window === 'undefined') return 'en';
+  
+  const browserLocale = window.navigator.language || 'en';
+  const shortLocale = browserLocale.split('-')[0];
+  
+  return getFallbackLocale(shortLocale);
+};
+
+/**
+ * Bundle size estimation utility
+ * @param locales - Array of locales to estimate
+ * @returns Estimated bundle size impact in bytes
+ * @since 2.0.0
+ */
+export const estimateBundleSize = (locales: SupportedLocale[]): number => {
+  // Rough estimation: 2KB per additional locale
+  const baseSize = 1500; // English baseline
+  const additionalLocales = locales.filter(locale => locale !== 'en').length;
+  return baseSize + (additionalLocales * 2000);
 };

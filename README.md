@@ -388,22 +388,77 @@ npm run perf:audit
 
 ## 🌍 Internationalization
 
+The widget supports comprehensive internationalization with optimized bundle size - only English is included by default, with other locales loaded on demand:
+
 ```tsx
 const config = {
   localization: {
-    locale: "es",
-    fallbackLocale: "en",
-    rtl: false,
+    locale: "es", // Current locale
+    fallbackLocale: "en", // Fallback when translation is missing
+    rtl: false, // Right-to-left text direction
     customTranslations: {
-      "feedback.title": "Enviar Comentarios",
-      "feedback.submit": "Enviar",
-      "feedback.cancel": "Cancelar"
+      es: {
+        "feedback.title": "Enviar Comentarios",
+        "feedback.submit": "Enviar",
+        "feedback.placeholder": "Cuéntanos qué piensas...",
+        "feedback.success": "¡Gracias por tus comentarios!"
+      }
     }
   }
 };
-
-// Supported locales: en, es, fr, de, it, pt, ja, ko, zh, ar, he, ru
 ```
+
+### Supported Locales
+
+Built-in support for: `en` (default), `de`, `es`, `fr`, `nl`
+
+### Dynamic Locale Switching
+
+```tsx
+import { useState } from "react";
+import { FeedbackProvider } from "react-feedback-report-widget";
+
+const App = () => {
+  const [currentLocale, setCurrentLocale] = useState("en");
+  
+  const config = {
+    localization: {
+      locale: currentLocale,
+      fallbackLocale: "en",
+      rtl: ["ar", "he"].includes(currentLocale)
+    }
+  };
+
+  return (
+    <FeedbackProvider config={config}>
+      <select value={currentLocale} onChange={(e) => setCurrentLocale(e.target.value)}>
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="nl">Nederlands</option>
+      </select>
+      <YourApp />
+    </FeedbackProvider>
+  );
+};
+```
+
+### Key Translation Properties
+
+| Key | Description |
+|-----|-------------|
+| `feedback.title` | Modal title |
+| `feedback.submit` | Submit button |
+| `feedback.placeholder` | Textarea placeholder |
+| `feedback.success` | Success message |
+| `feedback.error` | Error message |
+
+### Bundle Optimization
+
+- **Lazy Loading**: Only English included by default (~1.5KB)
+- **Tree Shaking**: Unused translations eliminated
+- **Dynamic Imports**: Additional locales loaded on demand (~2KB each)
 
 ## 🔒 Privacy & Security
 

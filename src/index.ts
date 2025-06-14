@@ -1,22 +1,25 @@
 /**
- * Main entry point for the React Feedback Report Widget
- * @module index
+ * @fileoverview React Feedback Report Widget - Main entry point
+ * @module react-feedback-report-widget
+ * @version 2.0.0
+ * @author ArlindMaliqi
+ * @license MIT
+ * @since 1.0.0
  */
 
 // Core components
-export { FeedbackProvider } from './contexts/FeedbackContext';
+export { FeedbackProvider } from './components/FeedbackProvider';
 export { FeedbackButton } from './components/FeedbackButton';
 export { FeedbackModal } from './components/FeedbackModal';
-export { MinimalFeedbackWidget } from './components/MinimalFeedbackWidget';
 export { OptimizedFeedbackWidget } from './components/OptimizedFeedbackWidget';
 
 // Hooks
 export { useFeedback } from './hooks/useFeedback';
-export { useTheme } from './hooks/useTheme';
+export { useLocalization } from './hooks/useLocalization';
 export { useFeedbackHistory } from './hooks/useFeedbackHistory';
 export { useFeedbackAnalytics } from './hooks/useFeedbackAnalytics';
 
-// Types (single export)
+// Types
 export type {
   Feedback,
   FeedbackConfig,
@@ -27,7 +30,6 @@ export type {
   UserIdentity,
   FeedbackAttachment,
   FeedbackButtonProps,
-  MinimalFeedbackWidgetProps,
   OptimizedFeedbackWidgetProps,
   FeedbackProviderProps,
   AnalyticsConfig,
@@ -39,13 +41,33 @@ export type {
   AnyIssueTrackerConfig,
   FeedbackContextValue,
   ThemeContextType,
-  TemplateField
+  TemplateField,
+  SupportedLocale
 } from './types';
 
-// Import the type for use in defaultConfig
+// Utilities
+export { 
+  showSuccess, 
+  showError, 
+  showInfo, 
+  showWarning,
+  NotificationType
+} from './utils/notifications';
+
+// Export missing components
+export { OptimizedFeedbackWidget as MinimalFeedbackWidget } from "./components/OptimizedFeedbackWidget";
+
+// Utility exports
+export { 
+  generateId, 
+  validateFeedback, 
+  handleApiResponse,
+  formatTimestamp
+} from "./utils";
+
+// Default configuration
 import type { FeedbackConfig } from './types';
 
-// Default configuration - now properly typed with import
 export const defaultConfig: Partial<FeedbackConfig> = {
   theme: 'system',
   enableShakeDetection: true,
@@ -53,12 +75,14 @@ export const defaultConfig: Partial<FeedbackConfig> = {
   enableVoting: false,
   collectUserIdentity: false,
   enableFileAttachments: true,
-  maxFileSize: 5 * 1024 * 1024, // 5MB
+  maxFileSize: 5 * 1024 * 1024,
 };
 
 // Main widget component (alias for backward compatibility)
-export { MinimalFeedbackWidget as FeedbackWidget } from './components/MinimalFeedbackWidget';
+export { OptimizedFeedbackWidget as FeedbackWidget } from './components/OptimizedFeedbackWidget';
 
-// Utilities
-export { Analytics } from './integrations';
-export * from './utils/notifications';
+// Default export
+export { OptimizedFeedbackWidget as default } from './components/OptimizedFeedbackWidget';
+
+// Package metadata
+export const VERSION = '2.0.0';

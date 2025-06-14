@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
-// Create a mock for Remix API to avoid TS error
-// In a real project, you'd use the actual Remix imports
-import type { Feedback, CustomIssueTrackerConfig } from '../../types';
-import { MinimalFeedbackWidget } from '../../index';
-import type { FeedbackConfig } from '../../types';
+import { OptimizedFeedbackWidget } from '../../index';
+import type { Feedback, CustomIssueTrackerConfig, FeedbackConfig } from '../../types';
 
 // Mock the useLocation hook for demonstration
 const useLocation = () => ({ pathname: '/current-path' });
@@ -58,11 +55,11 @@ export const RemixFeedback: React.FC = () => {
   };
   
   return (
-    <MinimalFeedbackWidget
-      apiEndpoint={remixConfig.apiEndpoint}
+    <OptimizedFeedbackWidget
+      config={remixConfig}
       theme="system"
+      showButton={true}
       enableShakeDetection={remixConfig.enableShakeDetection}
-      // Removed template and animation props
     />
   );
 };

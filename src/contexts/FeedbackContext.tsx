@@ -1,6 +1,9 @@
 /**
  * Feedback and Localization Context definitions
  * @module contexts/FeedbackContext
+ * @version 2.0.0
+ * @author ArlindMaliqi
+ * @since 1.0.0
  */
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import type { 
@@ -10,12 +13,12 @@ import type {
 } from '../types';
 
 /**
- * Localization context type
+ * Local localization context type to avoid conflicts
  */
-interface LocalLocalizationContextType {
-  t: (key: string, values?: Record<string, any>) => string;
-  locale: string; // More flexible than the strict union type
-  direction: 'ltr' | 'rtl';
+export interface LocalLocalizationContextType {
+  t: (key: string, params?: Record<string, string | number>) => string;
+  locale: string;
+  dir: 'ltr' | 'rtl';
 }
 
 /**
@@ -64,6 +67,7 @@ export const FeedbackProvider: React.FC<LocalFeedbackProviderProps> = ({ childre
         message,
         type: type || 'other',
         timestamp: new Date(),
+        status: 'open', // Add missing status property
         submissionStatus: 'pending',
         ...additionalData
       };
@@ -104,7 +108,7 @@ export const FeedbackProvider: React.FC<LocalFeedbackProviderProps> = ({ childre
   const localizationValue: LocalLocalizationContextType = useMemo(() => ({
     t: (key: string) => key,
     locale: 'en',
-    direction: 'ltr'
+    dir: 'ltr'
   }), []);
 
   return (

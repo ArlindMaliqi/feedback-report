@@ -1,16 +1,18 @@
 /**
  * Performance-optimized FeedbackProvider with lazy loading capabilities
  * @module components/OptimizedFeedbackProvider
+ * @version 2.0.0
+ * @author ArlindMaliqi
+ * @since 1.5.0
  */
 import React, { 
   useState, 
   ReactNode, 
   useCallback, 
-  useEffect, 
   useMemo
 } from "react";
 import type { 
-  FeedbackContextType, 
+  FeedbackContextValue, 
   Feedback, 
   FeedbackConfig
 } from "../types";
@@ -18,19 +20,17 @@ import { generateId, validateFeedback, handleApiResponse } from "../utils";
 import { showError, showSuccess } from "../utils/notifications";
 import { DEFAULT_CATEGORIES } from "../utils/categories";
 import { createTranslator, getDirection } from "../utils/localization";
-import { SSRSafeComponent } from "../core/SSRSafeComponent";
-import { FeedbackContext, LocalizationContext, LocalizationContextType as LocalLocalizationContextType } from "../contexts/FeedbackContext";
+import { FeedbackContext, LocalizationContext, LocalLocalizationContextType } from "../contexts/FeedbackContext";
 
 /**
  * Configuration properties for the OptimizedFeedbackProvider component
- * @interface OptimizedFeedbackProviderProps
  */
 interface OptimizedFeedbackProviderProps {
   /** Child components that will have access to the feedback context */
   children: ReactNode;
   /** Configuration options for the feedback system */
   config?: FeedbackConfig;
-  /** Test props for mocking behavior in test environments (internal use only) */
+  /** Test props for mocking behavior in test environments */
   _testProps?: {
     mockApiResponse?: any;
     disableNetworkRequests?: boolean;
@@ -39,23 +39,6 @@ interface OptimizedFeedbackProviderProps {
 
 /**
  * Enhanced FeedbackProvider with performance optimizations and dynamic loading
- * 
- * This provider includes:
- * - Lazy loading of heavy components and integrations
- * - SSR compatibility for server-side rendering
- * - Bundle size optimization through dynamic imports
- * - Intelligent loading of features based on configuration
- * - Memory-efficient state management
- * 
- * @param props - Provider configuration properties
- * @returns Enhanced feedback provider with performance optimizations
- * 
- * @example
- * ```tsx
- * <OptimizedFeedbackProvider config={{ apiEndpoint: '/api/feedback' }}>
- *   <App />
- * </OptimizedFeedbackProvider>
- * ```
  */
 export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps> = ({ 
   children, 
@@ -64,25 +47,15 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
 }) => {
   // State management
   const [isOpen, setIsOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Add missing variable
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [isOffline, setIsOffline] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Lazy loading state for integrations
-  const [integrationsLoaded, setIntegrationsLoaded] = useState(false);
-  const [integrationModules, setIntegrationModules] = useState<{
-    processIntegrations?: any;
-    processVoteIntegrations?: any;
-  }>({});
-
-  /**
-   * Localization setup with memoized translator function
-   */
-  const translator = useMemo(() => createTranslator(config.localization), [config.localization]);
-  const t = useCallback((key: string, values?: Record<string, any>) => 
-    translator(key, values), [translator]);
+  // Create translator
+  const t = useMemo(() => {
+    return createTranslator(config.localization);
+  }, [config.localization]);
 
   /**
    * Opens the feedback modal
@@ -95,60 +68,7 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
   const closeModal = useCallback(() => setIsOpen(false), []);
 
   /**
-   * Dynamically loads integration modules when needed to optimize initial bundle size
-   * @returns Promise that resolves when integrations are loaded
-   */
-  const loadIntegrations = useCallback(async () => {
-    if (integrationsLoaded || 
-        (!config.analytics && !config.issueTracker && !config.webhooks && !config.notifications)) {
-      return;
-    }
-
-    try {
-      const integrationsModule = await import('../utils/integrations');
-      setIntegrationModules({
-        processIntegrations: integrationsModule.processIntegrations,
-        processVoteIntegrations: integrationsModule.processVoteIntegrations,
-      });
-      setIntegrationsLoaded(true);
-    } catch (error) {
-      console.error('Failed to load integrations:', error);
-    }
-  }, [config, integrationsLoaded]);
-
-  /**
-   * Effect to load integrations when configuration changes
-   */
-  useEffect(() => {
-    if (config.analytics || config.issueTracker || config.webhooks || config.notifications) {
-      void loadIntegrations();
-    }
-  }, [config, loadIntegrations]);
-
-  /**
-   * Synchronizes offline feedback when connection is restored
-   * @returns Promise that resolves when sync is complete
-   */
-  const syncOfflineFeedback = useCallback(async (): Promise<void> => {
-    if (isOffline) {
-      // Sync logic implementation would go here
-      console.log('Syncing offline feedback...');
-    }
-  }, [isOffline]);
-
-  /**
-   * Gets feedback categories from configuration or uses defaults
-   */
-  const categories = useMemo(() => {
-    return config.categories || DEFAULT_CATEGORIES || [];
-  }, [config.categories]);
-
-  /**
-   * Submits feedback with validation, API integration, and error handling
-   * @param message - The feedback message content
-   * @param type - The type of feedback (bug, feature, improvement, other)
-   * @param additionalData - Additional metadata to include with the feedback
-   * @returns Promise that resolves when submission is complete
+   * Submits feedback with validation and error handling
    */
   const submitFeedback = useCallback(
     async (
@@ -171,7 +91,7 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
           id: generateId(),
           message: message.trim(),
           type: type || 'other',
-          timestamp: new Date(), // Fixed: use new Date() instead of Date.now()
+          timestamp: new Date(),
           priority: additionalData?.priority || 'medium',
           status: 'open',
           votes: 0,
@@ -203,12 +123,6 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
         // Update local state
         setFeedbacks(prev => [newFeedback, ...prev]);
 
-        // Process integrations if loaded and configured
-        if (integrationModules.processIntegrations && 
-            (config.analytics || config.issueTracker || config.webhooks || config.notifications)) {
-          await integrationModules.processIntegrations(newFeedback, config);
-        }
-
         showSuccess(t('notification.success'));
         closeModal();
       } catch (err) {
@@ -220,78 +134,46 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
         setIsSubmitting(false);
       }
     },
-    [config, closeModal, isOffline, t, integrationModules, _testProps]
+    [config, closeModal, t, _testProps]
   );
 
-  /**
-   * Handles voting on existing feedback with integration support
-   * @param id - The ID of the feedback to vote on
-   * @returns Promise that resolves when vote is processed
-   */
-  const voteFeedback = useCallback(
-    async (id: string): Promise<void> => {
-      if (!config.enableVoting) return;
-
-      try {
-        // Process vote through integrations if loaded
-        if (integrationModules.processVoteIntegrations) {
-          await integrationModules.processVoteIntegrations(id, config);
-        }
-
-        // Update local state optimistically
-        setFeedbacks(prev => 
-          prev.map(feedback => 
-            feedback.id === id 
-              ? { ...feedback, votes: (feedback.votes || 0) + 1 }
-              : feedback
-          )
-        );
-
-        showSuccess(t('notification.voted'));
-      } catch (error) {
-        showError(t('notification.voteError'));
-      }
-    },
-    [config, isOffline, feedbacks, t, integrationModules]
-  );
+  // Get categories from configuration
+  const categories = useMemo(() => {
+    return config.categories || DEFAULT_CATEGORIES || [];
+  }, [config.categories]);
 
   /**
-   * Memoized feedback context value to prevent unnecessary re-renders
+   * Memoized feedback context value
    */
-  const feedbackContextValue: FeedbackContextType = useMemo(() => ({
+  const feedbackContextValue: FeedbackContextValue = useMemo(() => ({
     feedbacks,
     isOpen,
-    isModalOpen, // Now properly declared
     isSubmitting,
     isOffline,
     error,
-    loading: false, // Added missing loading property
+    loading: false,
     openModal,
     closeModal,
     submitFeedback,
-    voteFeedback,
-    syncOfflineFeedback,
     categories,
     config
-  }), [feedbacks, isOpen, isSubmitting, isOffline, error, openModal, closeModal, submitFeedback, voteFeedback, syncOfflineFeedback, categories, config]);
+  }), [feedbacks, isOpen, isSubmitting, isOffline, error, openModal, closeModal, submitFeedback, categories, config]);
 
   /**
-   * Memoized localization context value with text direction support
+   * Memoized localization context value
    */
   const localizationContextValue: LocalLocalizationContextType = useMemo(() => ({
-    t: (key: string) => key,
-    locale: 'en', // Use string instead of const assertion to match LocalLocalizationContextType
-    direction: 'ltr'
-  }), []);
+    t: (key: string, params?: Record<string, string | number>) => t(key, params),
+    locale: config.localization?.locale || 'en',
+    dir: getDirection(config.localization?.locale || 'en')
+  }), [t, config.localization]);
 
   return (
-    <SSRSafeComponent>
-      <LocalizationContext.Provider value={localizationContextValue}>
-        <FeedbackContext.Provider value={feedbackContextValue}>
-          {children}
-        </FeedbackContext.Provider>
-      </LocalizationContext.Provider>
-    </SSRSafeComponent>
+    <LocalizationContext.Provider value={localizationContextValue}>
+      <FeedbackContext.Provider value={feedbackContextValue}>
+        {children}
+      </FeedbackContext.Provider>
+    </LocalizationContext.Provider>
   );
 };
 

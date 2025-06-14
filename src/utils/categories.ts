@@ -2,6 +2,7 @@
  * Default feedback categories and utilities
  * @module utils/categories
  */
+
 import type { FeedbackCategory } from '../types';
 
 /**
@@ -12,38 +13,43 @@ export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
     id: 'bug',
     name: 'Bug Report',
     description: 'Report a problem or issue',
-    color: '#ff4444',
     subcategories: [
       { id: 'ui', name: 'User Interface', description: 'Visual or layout issues' },
-      { id: 'performance', name: 'Performance', description: 'Slow loading or responsiveness' },
-      { id: 'functionality', name: 'Functionality', description: 'Feature not working as expected' }
+      { id: 'functionality', name: 'Functionality', description: 'Feature not working as expected' },
+      { id: 'performance', name: 'Performance', description: 'Slow loading or responsiveness issues' }
     ]
   },
   {
     id: 'feature',
     name: 'Feature Request',
-    description: 'Suggest a new feature or improvement',
-    color: '#4CAF50',
+    description: 'Suggest a new feature',
     subcategories: [
       { id: 'enhancement', name: 'Enhancement', description: 'Improve existing functionality' },
-      { id: 'new-feature', name: 'New Feature', description: 'Request entirely new functionality' }
+      { id: 'new-feature', name: 'New Feature', description: 'Completely new functionality' }
     ]
   },
   {
     id: 'improvement',
     name: 'Improvement',
-    description: 'Suggest an enhancement to existing functionality',
-    color: '#2196F3',
+    description: 'Suggest an improvement',
     subcategories: [
-      { id: 'usability', name: 'Usability', description: 'Make it easier to use' },
-      { id: 'design', name: 'Design', description: 'Visual or aesthetic improvements' }
+      { id: 'usability', name: 'Usability', description: 'Make something easier to use' },
+      { id: 'accessibility', name: 'Accessibility', description: 'Improve accessibility features' }
+    ]
+  },
+  {
+    id: 'question',
+    name: 'Question',
+    description: 'Ask a question',
+    subcategories: [
+      { id: 'how-to', name: 'How To', description: 'How to use a feature' },
+      { id: 'general', name: 'General', description: 'General questions' }
     ]
   },
   {
     id: 'other',
     name: 'Other',
-    description: 'General feedback or questions',
-    color: '#9E9E9E',
+    description: 'Something else',
     subcategories: []
   }
 ];

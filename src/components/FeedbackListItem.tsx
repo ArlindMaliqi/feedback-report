@@ -1,8 +1,5 @@
 import React from 'react';
 import { Feedback } from '../types';
-import { formatTimestamp } from '../utils';
-import { FeedbackVoteButton } from './FeedbackVoteButton';
-import { getCategoryDisplayName } from '../utils/categories';
 import { useTheme } from '../hooks/useTheme';
 
 /**
@@ -33,7 +30,8 @@ export const FeedbackListItem: React.FC<FeedbackListItemProps> = ({
   categories = []
 }) => {
   const { theme } = useTheme();
-  const hasVoted = feedback.voters?.includes(currentUserId || '') || false;
+  // Fix: Use votedBy array to check if user has voted
+  const hasVoted = feedback.votedBy?.includes(currentUserId || '') || false;
 
   // Get category display name if available
   const categoryDisplay = feedback.category && categories.length > 0
@@ -109,16 +107,15 @@ export const FeedbackListItem: React.FC<FeedbackListItemProps> = ({
             {categoryDisplay}
           </span>
           {feedback.submissionStatus === 'pending' && (
-            <span className="text-yellow-600 text-sm">Pending...</span>
+            <span style={styles.offline}>Pending...</span>
           )}
         </div>
         {enableVoting && (
-          <FeedbackVoteButton 
-            feedbackId={feedback.id} 
-            votes={feedback.votes || 0}
-            hasVoted={hasVoted}
-            size="small"
-          />
+          <div>
+            <button disabled={hasVoted}>
+              👍 {feedback.votes || 0}
+            </button>
+          </div>
         )}
       </div>
       
@@ -143,7 +140,7 @@ export const FeedbackListItem: React.FC<FeedbackListItemProps> = ({
       
       <div style={styles.footer}>
         {feedback.url && (
-          <a href={feedback.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+          <a href={feedback.url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none' }}>
             📍 {new URL(feedback.url).pathname}
           </a>
         )}
@@ -153,3 +150,30 @@ export const FeedbackListItem: React.FC<FeedbackListItemProps> = ({
 };
 
 export default FeedbackListItem;
+
+// Add local utility function since it's missing from utils
+const formatTimestamp = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+};
+
+// Add missing utility function
+const getCategoryDisplayName = (categories: any[], categoryId?: string, subcategoryId?: string): string => {
+  if (!categoryId || !categories.length) return 'Other';
+  
+  const category = categories.find(cat => cat.id === categoryId);
+  if (!category) return categoryId;
+  
+  if (subcategoryId && category.subcategories) {
+    const subcategory = category.subcategories.find((sub: any) => sub.id === subcategoryId);
+    if (subcategory) return `${category.name} - ${subcategory.name}`;
+  }
+  
+  return category.name;
+};
+

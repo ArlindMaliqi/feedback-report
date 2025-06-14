@@ -1,7 +1,6 @@
 import React from 'react';
-// Fix imports by using relative paths
-import { FeedbackWidget } from '../../index';
-import type { FeedbackConfig } from '../../types';
+import { OptimizedFeedbackWidget } from '../../index';
+import type { FeedbackConfig, SupportedLocale } from '../../types';
 
 // Add type declaration for window.gatsbyAnalytics
 declare global {
@@ -30,7 +29,12 @@ const gatsbyConfig: FeedbackConfig = {
   enableFileAttachments: true,
   maxFileSize: 5 * 1024 * 1024,
   localization: {
-    locale: typeof window !== 'undefined' ? window.navigator.language : 'en'
+    locale: (typeof window !== 'undefined' ? 
+      window.navigator.language.split('-')[0] : 'en') as SupportedLocale,
+    fallbackLocale: 'en' as SupportedLocale,
+    customTranslations: {
+      // ...existing code...
+    }
   }
 };
 
@@ -41,9 +45,10 @@ const gatsbyConfig: FeedbackConfig = {
  */
 export const GatsbyFeedback: React.FC = () => {
   return (
-    <FeedbackWidget
-      apiEndpoint={gatsbyConfig.apiEndpoint}
+    <OptimizedFeedbackWidget
+      config={gatsbyConfig}
       theme="system"
+      showButton={true}
       enableShakeDetection={gatsbyConfig.enableShakeDetection}
     />
   );

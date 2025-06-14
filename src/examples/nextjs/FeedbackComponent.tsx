@@ -1,7 +1,6 @@
 import React from 'react';
-// Fix imports by using relative paths instead of package imports for internal development
-import { FeedbackWidget } from '../../index';
-import type { FeedbackConfig, Feedback, CustomIssueTrackerConfig } from '../../types';
+import { OptimizedFeedbackWidget } from '../../index';
+import type { FeedbackConfig, CustomIssueTrackerConfig } from '../../types';
 
 /**
  * Example configuration for Next.js applications
@@ -34,11 +33,11 @@ const nextJsConfig: FeedbackConfig = {
  */
 export const NextJsFeedback: React.FC = () => {
   return (
-    <FeedbackWidget
-      apiEndpoint={nextJsConfig.apiEndpoint}
+    <OptimizedFeedbackWidget
+      config={nextJsConfig}
       theme="system"
+      showButton={true}
       enableShakeDetection={nextJsConfig.enableShakeDetection}
-      // Removed template and animation props
     />
   );
 };

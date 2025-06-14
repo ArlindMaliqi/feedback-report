@@ -1,3 +1,19 @@
+/**
+ * @fileoverview Type definitions for the React Feedback Report Widget
+ * @module types
+ * @version 2.0.0
+ * @author ArlindMaliqi
+ * @since 1.0.0
+ */
+
+/**
+ * Supported locale codes - reduced to requested languages
+ */
+export type SupportedLocale = 'en' | 'de' | 'es' | 'fr' | 'nl';
+
+/**
+ * Core feedback data structure
+ */
 export interface Feedback {
   id: string;
   message: string;
@@ -5,16 +21,16 @@ export interface Feedback {
   category?: string;
   subcategory?: string;
   priority?: 'low' | 'medium' | 'high' | 'critical';
-  status?: 'open' | 'in-progress' | 'resolved' | 'closed';
-  votes?: number;
+  status: 'open' | 'in-progress' | 'resolved' | 'closed';
   timestamp: Date;
+  votes?: number;
+  url?: string;
+  userAgent?: string;
   user?: UserIdentity;
   attachments?: FeedbackAttachment[];
-  metadata?: Record<string, any>;
-  url?: string;
-  voters?: string[];
   submissionStatus?: 'pending' | 'synced' | 'failed';
-  userAgent?: string;
+  /** Array of user IDs who voted on this feedback (for voting tracking) */
+  votedBy?: string[];
 }
 
 export interface UserIdentity {
@@ -161,15 +177,39 @@ export interface EmailConfig {
   template?: string;
 }
 
-// Localization configuration
+/**
+ * Localization configuration with bundle optimization
+ * @since 2.0.0
+ */
 export interface LocalizationConfig {
-  locale: string;
-  fallbackLocale?: string;
-  defaultLocale?: string;
+  /** Current locale code */
+  locale?: SupportedLocale;
+  /** Fallback locale when translation is missing */
+  fallbackLocale?: SupportedLocale;
+  /** Whether to use RTL layout */
   rtl?: boolean;
-  customTranslations?: Record<string, string>;
-  messages?: Record<string, Record<string, string>>;
-  t?: (key: string, params?: Record<string, string | number>) => string;
+  /** Custom translations organized by locale */
+  customTranslations?: {
+    [K in SupportedLocale]?: {
+      [key: string]: string;
+    };
+  };
+  /** Whether to lazy load translation bundles */
+  lazyLoad?: boolean;
+  /** Whether to automatically detect browser locale */
+  autoDetect?: boolean;
+}
+
+/**
+ * Localization context type - single definition
+ */
+export interface LocalizationContextType {
+  /** Translation function that always returns string with optional params */
+  t: (key: string, params?: Record<string, string | number>) => string;
+  /** Text direction */
+  direction: 'ltr' | 'rtl';
+  /** Current locale */
+  locale: string;
 }
 
 // Template field types
@@ -206,12 +246,6 @@ export interface FeedbackContextValue {
 }
 
 export type FeedbackContextType = FeedbackContextValue;
-
-export interface LocalizationContextType {
-  t: (key: string) => string;
-  locale: 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'ja' | 'ko' | 'zh' | 'ar' | 'he' | 'ru';
-  direction: 'ltr' | 'rtl';
-}
 
 export interface ThemeContextType {
   theme: 'light' | 'dark';
