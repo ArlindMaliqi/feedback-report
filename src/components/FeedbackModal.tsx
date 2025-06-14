@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useContext } from "react";
 import { useFeedback } from "../hooks/useFeedback";
 import { useTheme } from "../hooks/useTheme";
 import { getAnimationStyles } from "../utils/animations";
 import { getTemplateById } from "../utils/templates";
 import { showInfo } from "../utils/notifications";
 import { isSonnerAvailable } from "../utils/notifications";
+import { LocalizationContext } from "./FeedbackProvider";
 import type {
   Feedback,
   FeedbackModalStyles,
@@ -69,6 +70,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     categories,
   } = useFeedback();
   const { theme } = useTheme();
+
+  // Get localization context
+  const { t, dir } = useContext(LocalizationContext);
+
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [attachments, setAttachments] = useState<FeedbackAttachment[]>([]);
   const [identity, setIdentity] = useState<UserIdentity>({});
@@ -425,21 +430,23 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     ),
   };
 
-  // Content style with theme and animation
+  // Content style with theme, animation, and RTL support
   const contentStyle = {
-    backgroundColor: contentStyles.backgroundColor || (theme === "dark" ? "#1f2937" : "white"),
-    color: theme === "dark" ? "#e5e7eb" : "inherit",
+    backgroundColor: contentStyles.backgroundColor || (theme === 'dark' ? "#1f2937" : "white"),
+    color: theme === 'dark' ? "#e5e7eb" : "inherit",
     padding: contentStyles.padding || "2rem",
     borderRadius: contentStyles.borderRadius || "8px",
     width: contentStyles.width || "90%",
     maxWidth: contentStyles.maxWidth || "500px",
-    boxShadow: contentStyles.boxShadow || (theme === "dark"
-      ? "0 4px 20px rgba(0, 0, 0, 0.5)"
+    boxShadow: contentStyles.boxShadow || (theme === 'dark' 
+      ? "0 4px 20px rgba(0, 0, 0, 0.5)" 
       : "0 4px 20px rgba(0, 0, 0, 0.15)"),
     fontFamily: contentStyles.fontFamily || "inherit",
+    direction: dir as React.CSSProperties['direction'],
+    textAlign: (dir === 'rtl' ? 'right' : 'left') as React.CSSProperties['textAlign'],
     ...getAnimationStyles(animation, !isClosing),
   };
-
+  
   // Error display style
   const errorDisplayStyle = {
     color: errorStyles.textColor || (theme === "dark" ? "#f87171" : "#d73a49"),
@@ -461,46 +468,43 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       aria-modal="true"
       aria-labelledby="feedback-modal-title"
       aria-describedby="feedback-modal-description"
+      dir={dir}
     >
       <div
         ref={modalRef}
         className={`feedback-modal-content ${className}`.trim()}
-        style={contentStyle}
+        style={contentStyle as React.CSSProperties}
         onClick={(e) => e.stopPropagation()}
       >
         {isOffline && (
-          <div
-            style={{
-              marginBottom: "1rem",
-              padding: "0.5rem",
-              backgroundColor: theme === "dark" ? "#374151" : "#f3f4f6",
-              borderRadius: "4px",
-              fontSize: "0.875rem",
+          <div 
+            style={{ 
+              marginBottom: '1rem', 
+              padding: '0.5rem', 
+              backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6', 
+              borderRadius: '4px', 
+              fontSize: '0.875rem' 
             }}
             role="status"
             aria-live="polite"
           >
-            <span role="img" aria-label="Warning">
-              ⚠️
-            </span>{" "}
-            You are currently offline. Your feedback will be saved locally and
-            submitted when you're back online.
+            <span role="img" aria-label="Warning">⚠️</span> {t('modal.offline.notice')}
           </div>
         )}
-
+        
         <h2 id="feedback-modal-title" style={{ marginTop: 0 }}>
-          {template.title}
+          {template.title || t('modal.title')}
         </h2>
-
-        {template.description && (
-          <p id="feedback-modal-description" style={{ marginBottom: "1.5rem" }}>
-            {template.description}
+        
+        {(template.description || t('modal.description')) && (
+          <p id="feedback-modal-description" style={{ marginBottom: '1.5rem' }}>
+            {template.description || t('modal.description')}
           </p>
         )}
-
+        
         {/* Only show error display if Sonner is not available */}
         {shouldShowInternalError && (
-          <div
+          <div 
             style={errorDisplayStyle}
             role="alert"
             aria-live="assertive"
@@ -508,10 +512,144 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             {submitError}
           </div>
         )}
-
+        
         <form onSubmit={handleSubmit} noValidate>
-          {/* Standard template fields */}
-          {template.fields.map(renderField)}
+          {/* Form fields with translated labels and placeholders */}
+          {template.fields.map((field) => {
+            const value = formData[field.id] !== undefined ? formData[field.id] : "";
+
+            const inputBaseStyle = {
+              width: "100%",
+              marginTop: "0.25rem",
+              border: `1px solid ${formStyles.inputBorderColor || (theme === "dark" ? "#4b5563" : "#ccc")}`,
+              borderRadius: formStyles.inputBorderRadius || "4px",
+              padding: formStyles.inputPadding || "0.75rem",
+              fontFamily: "inherit",
+              backgroundColor: theme === "dark" ? "#1f2937" : "white",
+              color: theme === "dark" ? "#e5e7eb" : "inherit",
+            };
+
+            const labelStyle = {
+              color: formStyles.labelColor || (theme === "dark" ? "#e5e7eb" : "inherit"),
+              fontWeight: formStyles.labelFontWeight || "inherit",
+              display: "block",
+              marginBottom: "0.25rem",
+            };
+
+            const helpTextStyle = {
+              fontSize: "0.875rem",
+              color: theme === "dark" ? "#9ca3af" : "#666",
+              marginTop: "0.25rem",
+            };
+
+            // Render appropriate field based on type
+            switch (field.type) {
+              case "select":
+                return (
+                  <div style={{ marginBottom: "1rem" }} key={field.id}>
+                    <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
+                      {field.label}
+                      {field.required ? " *" : ""}
+                    </label>
+                    <select
+                      id={`feedback-${field.id}`}
+                      value={value as string}
+                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                      style={inputBaseStyle}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      required={field.required}
+                      aria-required={field.required}
+                      aria-describedby={
+                        field.helpText ? `help-${field.id}` : undefined
+                      }
+                    >
+                      {field.options?.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {field.helpText && (
+                      <p id={`help-${field.id}`} style={helpTextStyle}>
+                        {field.helpText}
+                      </p>
+                    )}
+                  </div>
+                );
+
+              case "textarea":
+                return (
+                  <div style={{ marginBottom: "1rem" }} key={field.id}>
+                    <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
+                      {field.label}
+                      {field.required ? " *" : ""}
+                    </label>
+                    <textarea
+                      id={`feedback-${field.id}`}
+                      value={value as string}
+                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      disabled={isSubmitting}
+                      style={{
+                        ...inputBaseStyle,
+                        minHeight: "120px",
+                        resize: "vertical",
+                      }}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      aria-required={field.required}
+                      aria-describedby={
+                        field.helpText ? `help-${field.id}` : undefined
+                      }
+                    />
+                    {field.id === "message" && (
+                      <small style={{ color: theme === "dark" ? "#9ca3af" : "#666" }}>
+                        {(value as string).length}/1000 characters
+                      </small>
+                    )}
+                    {field.helpText && (
+                      <p id={`help-${field.id}`} style={helpTextStyle}>
+                        {field.helpText}
+                      </p>
+                    )}
+                  </div>
+                );
+
+              case "text":
+              default:
+                return (
+                  <div style={{ marginBottom: "1rem" }} key={field.id}>
+                    <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
+                      {field.label}
+                      {field.required ? " *" : ""}
+                    </label>
+                    <input
+                      type="text"
+                      id={`feedback-${field.id}`}
+                      value={value as string}
+                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      disabled={isSubmitting}
+                      style={inputBaseStyle}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      aria-required={field.required}
+                      aria-describedby={
+                        field.helpText ? `help-${field.id}` : undefined
+                      }
+                    />
+                    {field.helpText && (
+                      <p id={`help-${field.id}`} style={helpTextStyle}>
+                        {field.helpText}
+                      </p>
+                    )}
+                  </div>
+                );
+            }
+          })}
 
           {/* Category selector */}
           {categories.length > 0 && (
@@ -556,7 +694,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             style={{
               display: "flex",
               gap: "0.5rem",
-              justifyContent: "flex-end",
+              justifyContent: dir === 'rtl' ? "flex-start" : "flex-end",
               marginTop: "1.5rem",
             }}
           >
@@ -565,25 +703,22 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               onClick={handleClose}
               disabled={isSubmitting}
               style={cancelButtonStyle}
-              aria-label="Cancel and close feedback form"
+              aria-label={t('modal.cancel')}
             >
-              Cancel
+              {t('modal.cancel')}
             </button>
-
+            
             <button
               type="submit"
               disabled={
-                isSubmitting ||
-                template.fields
-                  .filter((field) => field.required)
-                  .some((field) => !formData[field.id])
+                isSubmitting || template.fields
+                  .filter(field => field.required)
+                  .some(field => !formData[field.id])
               }
               style={submitButtonStyle}
-              aria-label={
-                isSubmitting ? "Submitting feedback..." : "Submit feedback"
-              }
+              aria-label={isSubmitting ? t('modal.submitting') : t('modal.submit')}
             >
-              {isSubmitting ? "Submitting..." : "Submit Feedback"}
+              {isSubmitting ? t('modal.submitting') : t('modal.submit')}
             </button>
           </div>
         </form>

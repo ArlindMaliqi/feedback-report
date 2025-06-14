@@ -110,6 +110,207 @@ export interface FeedbackConfig {
   useExpandedCategories?: boolean;
   /** Custom categories configuration */
   categories?: FeedbackCategory[];
+  
+  /** Analytics integration configuration */
+  analytics?: AnalyticsConfig;
+  
+  /** Issue tracker integration configuration */
+  issueTracker?: AnyIssueTrackerConfig;
+  
+  /** Webhook integration configuration */
+  webhooks?: WebhookConfig[];
+  
+  /** Chat platform notifications configuration */
+  notifications?: NotificationConfig;
+  
+  /** Localization configuration */
+  localization?: LocalizationConfig;
+  
+  /** Flag to indicate test environment (not for production use) */
+  isTestEnvironment?: boolean;
+  
+  /** Flag to disable network requests (useful for testing) */
+  disableNetworkRequests?: boolean;
+  
+  /** Additional data to include with all feedback submissions */
+  additionalData?: Record<string, any>;
+}
+
+/**
+ * Analytics integration configuration
+ */
+export interface AnalyticsConfig {
+  /** Provider to use for analytics */
+  provider: 'google-analytics' | 'segment' | 'mixpanel' | 'custom';
+  
+  /** Track ID for Google Analytics */
+  trackingId?: string;
+  
+  /** API key for analytics provider */
+  apiKey?: string;
+  
+  /** Custom event name for feedback submission */
+  eventName?: string;
+  
+  /** Additional properties to include with analytics events */
+  additionalProperties?: Record<string, any>;
+  
+  /** Custom function for analytics tracking */
+  trackEvent?: (eventName: string, eventData: any) => void;
+}
+
+/**
+ * Issue tracker integration configuration
+ */
+export interface IssueTrackerConfig {
+  /** Issue tracker provider */
+  provider: 'github' | 'jira' | 'gitlab' | 'azure-devops' | 'custom';
+  
+  /** API endpoint for the issue tracker */
+  apiEndpoint: string;
+  
+  /** API token or Personal Access Token */
+  apiToken: string;
+  
+  /** Owner/organization name */
+  owner?: string;
+  
+  /** Repository name (for GitHub, GitLab) or project key (for Jira) */
+  repository?: string;
+  
+  /** Project ID (for some issue trackers) */
+  projectId?: string;
+  
+  /** Default issue type to create */
+  issueType?: string;
+  
+  /** Default labels to apply to created issues */
+  labels?: string[];
+  
+  /** Template for issue title */
+  titleTemplate?: string;
+  
+  /** Template for issue body */
+  bodyTemplate?: string;
+  
+  /** Map feedback fields to issue tracker fields */
+  fieldMapping?: Record<string, string>;
+  
+  /** Function to transform feedback data before submission */
+  transformData?: (feedback: Feedback) => Record<string, any>;
+  
+  /** Custom function to create issues */
+  createIssue?: (feedback: Feedback) => Promise<string>;
+}
+
+/**
+ * Issue tracker configuration for custom providers
+ * This allows custom providers to omit certain required fields
+ * that aren't applicable to custom implementations
+ */
+export interface CustomIssueTrackerConfig extends Omit<IssueTrackerConfig, 'apiToken' | 'owner' | 'repository'> {
+  provider: 'custom';
+  apiToken?: string;
+  owner?: string;
+  repository?: string;
+}
+
+/**
+ * Union type for all issue tracker configurations
+ * This allows us to distinguish between different providers and their requirements
+ */
+export type AnyIssueTrackerConfig = IssueTrackerConfig | CustomIssueTrackerConfig;
+
+/**
+ * Webhook configuration
+ */
+export interface WebhookConfig {
+  /** URL to send webhook to */
+  url: string;
+  
+  /** HTTP method to use */
+  method?: 'POST' | 'PUT' | 'PATCH';
+  
+  /** Custom headers to include with the request */
+  headers?: Record<string, string>;
+  
+  /** Function to transform data before sending */
+  transformData?: (feedback: Feedback) => Record<string, any>;
+  
+  /** Whether to use this webhook for all feedback or only specific types */
+  feedbackTypes?: Array<Feedback['type']>;
+  
+  /** Secret for signing webhook payloads (if supported) */
+  secret?: string;
+}
+
+/**
+ * Chat platform notification configuration
+ */
+export interface NotificationConfig {
+  /** Chat platform to use */
+  platform: 'slack' | 'teams' | 'discord' | 'custom';
+  
+  /** Webhook URL for the platform */
+  webhookUrl: string;
+  
+  /** Channel or room to send notifications to */
+  channel?: string;
+  
+  /** Username to display for notifications */
+  username?: string;
+  
+  /** Avatar URL for notifications */
+  iconUrl?: string;
+  
+  /** Template for notification message */
+  messageTemplate?: string;
+  
+  /** Whether to use thread replies for updates */
+  useThreads?: boolean;
+  
+  /** Function to transform data before sending */
+  transformMessage?: (feedback: Feedback) => Record<string, any>;
+  
+  /** Whether to notify only for specific feedback types */
+  feedbackTypes?: Array<Feedback['type']>;
+}
+
+/**
+ * Localization configuration
+ */
+export interface LocalizationConfig {
+  /** Current locale code (e.g. 'en', 'fr', 'es') */
+  locale?: string;
+  
+  /** Default locale to fall back to */
+  defaultLocale?: string;
+  
+  /** Translation messages by locale */
+  messages?: Record<string, Record<string, string>>;
+  
+  /** Function to get a translated message */
+  t?: (key: string, params?: Record<string, any>) => string;
+  
+  /** RTL (right-to-left) language support */
+  isRtl?: boolean;
+}
+
+/**
+ * Response from an issue tracker after creating an issue
+ */
+export interface IssueCreationResponse {
+  /** Success indicator */
+  success: boolean;
+  
+  /** Issue ID/key from the issue tracker */
+  issueId?: string;
+  
+  /** URL to the created issue */
+  issueUrl?: string;
+  
+  /** Error message if creation failed */
+  error?: string;
 }
 
 /**

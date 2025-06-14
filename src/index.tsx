@@ -22,10 +22,37 @@ export { OfflineIndicator } from "./components/OfflineIndicator";
 export { FeedbackVoteButton } from "./components/FeedbackVoteButton";
 export { FeedbackListItem } from "./components/FeedbackListItem";
 
+// Export localization
+export { 
+  createTranslator, 
+  getDirection, 
+  DEFAULT_MESSAGES,
+  TRANSLATIONS,
+  ALL_MESSAGES
+} from "./utils/localization";
+
+// Export integrations
+export { 
+  processIntegrations, 
+  processVoteIntegrations,
+  trackFeedbackEvent,
+  trackFeedbackSubmission,
+  trackFeedbackVote,
+  ANALYTICS_EVENTS
+} from "./utils/integrations";
+export { createIssueFromFeedback } from "./utils/integrations/issueTracker";
+export { sendToWebhook, sendToWebhooks } from "./utils/integrations/webhooks";
+export { sendNotification } from "./utils/integrations/notifications";
+
 // Hooks
 export { useFeedback } from "./hooks/useFeedback";
 export { useShakeDetection } from "./hooks/useShakeDetection";
 export { useTheme } from "./hooks/useTheme";
+export { useLocalization } from "./hooks/useLocalization";
+
+// Extended hooks
+export { useFeedbackHistory } from "./hooks/useFeedbackHistory";
+export { useFeedbackAnalytics } from "./hooks/useFeedbackAnalytics";
 
 // Types
 export type {
@@ -95,6 +122,21 @@ export {
   isSonnerAvailable
 } from "./utils/notifications";
 
+// Testing utilities
+import * as TestingUtils from './testing';
+export { TestingUtils };
+
+// Examples
+import * as NextJsExample from './examples/nextjs/FeedbackComponent';
+import * as GatsbyExample from './examples/gatsby/FeedbackComponent';
+import * as RemixExample from './examples/remix/FeedbackComponent';
+
+export const Examples = {
+  NextJs: NextJsExample,
+  Gatsby: GatsbyExample,
+  Remix: RemixExample
+};
+
 // Default component setup for easy integration
 import React from "react";
 import { FeedbackProvider } from "./components/FeedbackProvider";
@@ -143,37 +185,6 @@ interface FeedbackWidgetProps {
  * to your application with minimal setup.
  *
  * @param props - Widget configuration props
- * @example
- * ```tsx
- * // Basic usage
- * function App() {
- *   return (
- *     <div>
- *       <YourAppContent />
- *       <FeedbackWidget />
- *     </div>
- *   );
- * }
- * 
- * // Advanced configuration
- * function App() {
- *   return (
- *     <div>
- *       <YourAppContent />
- *       <FeedbackWidget 
- *         config={{
- *           apiEndpoint: '/api/feedback',
- *           enableOfflineSupport: true,
- *           enableAttachments: true
- *         }}
- *         template="bug-report"
- *         theme="system"
- *         animation={{ enter: 'zoom', exit: 'fade', duration: 300 }}
- *       />
- *     </div>
- *   );
- * }
- * ```
  */
 export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
   config = {},

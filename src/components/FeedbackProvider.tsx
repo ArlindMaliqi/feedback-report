@@ -1,5 +1,11 @@
-import React, { createContext, useState, ReactNode, useCallback, useEffect } from "react";
-import type { FeedbackContextType, Feedback, FeedbackConfig, FeedbackCategory } from "../types";
+import React, { createContext, useState, ReactNode, useCallback, useEffect, useMemo } from "react";
+import type { 
+  FeedbackContextType, 
+  Feedback, 
+  FeedbackConfig, 
+  FeedbackCategory, 
+  LocalizationConfig 
+} from "../types";
 import { generateId, validateFeedback, handleApiResponse } from "../utils";
 import { showError, showSuccess, showInfo } from "../utils/notifications";
 import { 
@@ -10,10 +16,28 @@ import {
   isOffline as checkIsOffline
 } from "../utils/offlineStorage";
 import { defaultCategories } from "../utils/categories";
+import { createTranslator, getDirection } from "../utils/localization";
+import { processIntegrations, processVoteIntegrations } from "../utils/integrations";
 
+/**
+ * Context for feedback system functionality
+ */
 export const FeedbackContext = createContext<FeedbackContextType | undefined>(
   undefined
 );
+
+/**
+ * Context for localization
+ */
+export const LocalizationContext = createContext<{
+  t: (key: string, params?: Record<string, string | number>) => string;
+  dir: 'ltr' | 'rtl';
+  locale: string;
+}>({
+  t: (key) => key,
+  dir: 'ltr',
+  locale: 'en'
+});
 
 /**
  * Props for the FeedbackProvider component
@@ -23,6 +47,11 @@ interface FeedbackProviderProps {
   children: ReactNode;
   /** Configuration options for the feedback system */
   config?: FeedbackConfig;
+  /** Test-only props - should not be used in production code */
+  _testProps?: {
+    initialFeedback?: Feedback[];
+    modalOpen?: boolean;
+  };
 }
 
 /**
@@ -35,13 +64,16 @@ interface FeedbackProviderProps {
  * @param props - Component props
  * @param props.children - Child components
  * @param props.config - Feedback system configuration
+ * @param props._testProps - Test-only props (not for production use)
  */
 export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
   children,
   config = {},
+  _testProps
 }) => {
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  // Initialize state with test values if provided
+  const [isModalOpen, setModalOpen] = useState(_testProps?.modalOpen || false);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>(_testProps?.initialFeedback || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState<boolean>(checkIsOffline());
@@ -89,6 +121,18 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     setError(null);
   }, []);
 
+  // Set up localization
+  const localizationConfig: LocalizationConfig = config.localization || {};
+  const locale = localizationConfig.locale || 'en';
+  const t = useMemo(() => 
+    createTranslator(localizationConfig), 
+    [localizationConfig]
+  );
+  const dir = useMemo(() => 
+    getDirection(localizationConfig), 
+    [localizationConfig]
+  );
+
   // Sync offline feedback when connection is restored
   const syncOfflineFeedback = useCallback(async (): Promise<void> => {
     if (!config.apiEndpoint || !config.enableOfflineSupport || isOffline) {
@@ -101,7 +145,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
 
     if (pendingFeedback.length === 0) return;
 
-    showInfo(`Syncing ${pendingFeedback.length} pending feedback items...`);
+    showInfo(t('notification.sync', { count: pendingFeedback.length }));
 
     for (const feedback of pendingFeedback) {
       try {
@@ -134,16 +178,19 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
                 : item
             )
           );
-          showError(`Failed to sync feedback: ${result.error}`);
+          showError(t('notification.error', { message: result.error || 'Unknown error' }));
           console.error('Failed to sync feedback:', result.error);
           continue;
         }
+
+        // Process integrations for the synced feedback
+        await processIntegrations(feedback, config);
 
         // Remove from offline storage if successfully synced
         removeFeedbackFromStorage(feedback.id);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        showError(`Error syncing feedback: ${errorMessage}`);
+        showError(t('notification.error', { message: errorMessage }));
         console.error('Error syncing feedback:', err);
         // Mark as failed
         setFeedbacks(prev => 
@@ -156,8 +203,8 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       }
     }
     
-    showSuccess('Feedback synchronization complete');
-  }, [config.apiEndpoint, config.enableOfflineSupport, feedbacks, isOffline]);
+    showSuccess(t('notification.syncComplete'));
+  }, [config, feedbacks, isOffline, t]);
 
   // Submit new feedback
   const submitFeedback = useCallback(
@@ -169,7 +216,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       const validation = validateFeedback(message);
       if (!validation.isValid) {
         setError(validation.error || "Invalid feedback");
-        showError(validation.error || "Invalid feedback");
+        showError(t('validation.required'));
         return;
       }
 
@@ -206,7 +253,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
             submissionStatus: 'pending' as const 
           };
           saveFeedbackOffline(feedbackWithStatus);
-          showInfo('Feedback saved locally and will be submitted when you\'re back online');
+          showInfo(t('notification.offline'));
           closeModal();
           setIsSubmitting(false);
           return;
@@ -231,20 +278,23 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
                 submissionStatus: 'pending' as const 
               };
               saveFeedbackOffline(feedbackWithStatus);
-              showInfo('Feedback saved locally due to API error and will be submitted later');
+              showInfo(t('notification.offline'));
             } else {
               // Remove from local state if API call failed and no offline support
               setFeedbacks((prev) => prev.filter((f) => f.id !== feedback.id));
               setError(result.error || "Failed to submit feedback");
-              showError(result.error || "Failed to submit feedback");
+              showError(t('notification.error', { message: result.error || 'Unknown error' }));
               return;
             }
           } else {
-            showSuccess('Feedback submitted successfully!');
+            // Process integrations for successful submissions
+            await processIntegrations(feedback, config);
+            showSuccess(t('notification.success'));
           }
         } else {
-          // If no API endpoint, just show success for local storage
-          showSuccess('Feedback recorded successfully');
+          // If no API endpoint, process integrations directly
+          await processIntegrations(feedback, config);
+          showSuccess(t('notification.success'));
         }
 
         // Success - close modal
@@ -252,7 +302,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
         setError(errorMessage);
-        showError(errorMessage);
+        showError(t('notification.error', { message: errorMessage }));
         
         // Store offline if error and offline support is enabled
         if (config.enableOfflineSupport) {
@@ -270,7 +320,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
         setIsSubmitting(false);
       }
     },
-    [config, closeModal, isOffline]
+    [config, closeModal, isOffline, t]
   );
 
   // Vote on existing feedback
@@ -290,8 +340,8 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       if (!existingFeedback) return;
       
       if (existingFeedback.voters?.includes(voterId)) {
-        setError("You have already voted for this feedback");
-        showInfo("You have already voted for this feedback");
+        setError(t('vote.alreadyVoted'));
+        showInfo(t('vote.alreadyVoted'));
         return;
       }
 
@@ -307,6 +357,9 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
             : item
         )
       );
+
+      // Process vote through integrations (e.g., analytics)
+      processVoteIntegrations(id, config);
 
       // Update on server if API endpoint is available and online
       if (config.apiEndpoint && !isOffline) {
@@ -334,25 +387,24 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
               )
             );
             setError(result.error || "Failed to record vote");
-            showError(result.error || "Failed to record vote");
-          } else {
-            showSuccess('Vote recorded successfully');
+            showError(t('notification.error', { message: result.error || 'Unknown error' }));
           }
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
-          showError(`Error voting for feedback: ${errorMessage}`);
+          showError(t('notification.error', { message: errorMessage }));
           console.error('Error voting for feedback:', err);
           // Leave the vote in place even if API call fails
           // The vote will be in local state and can be synced later
         }
       } else if (isOffline) {
-        showInfo('Your vote has been recorded locally and will sync when you\'re back online');
+        showInfo(t('notification.offline'));
       }
     },
-    [config.enableVoting, config.apiEndpoint, isOffline, feedbacks]
+    [config, isOffline, feedbacks, t]
   );
 
-  const value: FeedbackContextType = {
+  // Memoize context values for better performance
+  const feedbackContextValue = useMemo<FeedbackContextType>(() => ({
     isModalOpen,
     feedbacks,
     openModal,
@@ -364,11 +416,31 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     syncOfflineFeedback,
     voteFeedback,
     categories,
-  };
+  }), [
+    isModalOpen, 
+    feedbacks, 
+    openModal, 
+    closeModal, 
+    submitFeedback, 
+    isSubmitting, 
+    error, 
+    isOffline, 
+    syncOfflineFeedback, 
+    voteFeedback, 
+    categories
+  ]);
+
+  const localizationContextValue = useMemo(() => ({
+    t,
+    dir,
+    locale
+  }), [t, dir, locale]);
 
   return (
-    <FeedbackContext.Provider value={value}>
-      {children}
-    </FeedbackContext.Provider>
+    <LocalizationContext.Provider value={localizationContextValue}>
+      <FeedbackContext.Provider value={feedbackContextValue}>
+        {children}
+      </FeedbackContext.Provider>
+    </LocalizationContext.Provider>
   );
 };
