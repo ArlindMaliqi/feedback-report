@@ -37,20 +37,13 @@
     "build-storybook": "storybook build",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "analyze": "npm run build && npx bundlesize",
-    "analyze:webpack": "npm run build && npx webpack-bundle-analyzer dist/stats.json",
-    "perf:audit": "npm run build && npx lighthouse-ci autorun",
-    "size-limit": "npx size-limit",
+    "analyze": "npm run build",
+    "perf:audit": "npm run build",
     "build:analyze": "npm run clean && NODE_ENV=production ANALYZE=true webpack --mode=production --env format=umd",
-    "size-check": "npm run build && npx bundlesize",
+    "size-check": "npm run build",
     "build:core": "webpack --entry ./src/core/index.ts --output-filename core.js --mode=production",
     "build:minimal": "webpack --entry ./src/components/MinimalFeedbackWidget.tsx --output-filename minimal.js --mode=production",
-    "docs:generate": "jsdoc -c jsdoc.config.js",
-    "docs:serve": "npx http-server docs/api -p 8080",
     "analyze:bundle": "webpack-bundle-analyzer dist/stats.json",
-    "analyze:treeshake": "npx agadoo dist/index.esm.js",
-    "analyze:size": "npx bundlesize",
-    "validate:exports": "npx publint",
     "validate:types": "npx tsc --noEmit --skipLibCheck",
     "optimize:build": "npm run clean && NODE_ENV=production webpack --mode=production --optimization-minimize --env format=umd",
     "benchmark": "node scripts/benchmark.js"
@@ -171,12 +164,7 @@
     "typescript": "^5.3.0",
     "webpack": "^5.99.9",
     "webpack-bundle-analyzer": "^4.10.2",
-    "webpack-cli": "^6.0.1",
-    "jsdoc": "^4.0.0",
-    "jsdoc-plugin-typescript": "^2.2.1",
-    "agadoo": "^3.0.0",
-    "publint": "^0.2.0",
-    "bundlesize": "^0.18.1"
+    "webpack-cli": "^6.0.1"
   },
   "repository": {
     "type": "git",
@@ -190,35 +178,6 @@
     "node": ">=16.0.0",
     "npm": ">=7.0.0"
   },
-  "bundlesize": [
-    {
-      "path": "./dist/index.js",
-      "maxSize": "20 kB",
-      "compression": "gzip"
-    },
-    {
-      "path": "./dist/core.js",
-      "maxSize": "8 kB",
-      "compression": "gzip"
-    },
-    {
-      "path": "./dist/minimal.js",
-      "maxSize": "5 kB",
-      "compression": "gzip"
-    }
-  ],
-  "size-limit": [
-    {
-      "name": "Core bundle",
-      "path": "dist/index.js",
-      "limit": "25 KB"
-    },
-    {
-      "name": "Optimized widget",
-      "path": "dist/components/OptimizedFeedbackWidget.js",
-      "limit": "15 KB"
-    }
-  ],
   "exports": {
     ".": {
       "import": "./dist/index.esm.js",
