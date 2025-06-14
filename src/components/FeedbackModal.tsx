@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useFeedback } from "../hooks/useFeedback";
 import { useTheme } from "../hooks/useTheme";
 import { getAnimationStyles } from "../utils/animations";
 import { getTemplateById } from "../utils/templates";
-import { FileAttachmentInput } from "./FileAttachmentInput";
-import { UserIdentityFields } from "./UserIdentityFields";
-import { CategorySelector } from "./CategorySelector";
+import { showInfo } from "../utils/notifications";
+import { isSonnerAvailable } from "../utils/notifications";
 import type {
   Feedback,
   FeedbackModalStyles,
@@ -14,6 +13,9 @@ import type {
   FeedbackAttachment,
   UserIdentity,
 } from "../types";
+import { FileAttachmentInput } from "./FileAttachmentInput";
+import { UserIdentityFields } from "./UserIdentityFields";
+import { CategorySelector } from "./CategorySelector";
 
 /**
  * Props for the FeedbackModal component
@@ -32,13 +34,25 @@ interface FeedbackModalProps {
  *
  * This component renders a modal dialog where users can submit feedback.
  * Enhanced with accessibility features, automatic theme detection, animations,
- * and customizable templates. Now includes file attachments, user identity fields,
+ * and customizable templates. Includes file attachments, user identity fields,
  * category selection, and offline support.
  *
  * @param props - Component props
  * @param props.styles - Custom styling configuration
  * @param props.animation - Animation configuration
  * @param props.templateId - Template ID to use
+ *
+ * @example
+ * ```tsx
+ * <FeedbackModal
+ *   styles={{
+ *     content: { backgroundColor: "#f9f9f9" },
+ *     buttons: { primaryBackgroundColor: "#4a90e2" }
+ *   }}
+ *   animation={{ enter: "zoom", exit: "fade", duration: 400 }}
+ *   templateId="bug-report"
+ * />
+ * ```
  */
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   styles = {},
@@ -63,7 +77,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   const [isClosing, setIsClosing] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const initialFocusRef = useRef<HTMLElement | null>(null);
-  const template = getTemplateById(templateId);
+
+  // Get the template data for the specified template ID
+  const template = useMemo(() => getTemplateById(templateId), [templateId]);
 
   // Use either dark mode styles or default styles based on theme
   const themeStyles =
@@ -79,6 +95,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     className = "",
     overlayClassName = "",
   } = { ...styles, ...themeStyles };
+
+  // Check if we should render our own error display
+  const shouldShowInternalError = submitError && !isSonnerAvailable();
 
   // Initialize form data from template defaults
   useEffect(() => {
@@ -96,6 +115,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       setAttachments([]);
       setCategory("");
       setSubcategory(undefined);
+
+      // Notify user of modal opening if Sonner is available
+      if (isSonnerAvailable()) {
+        showInfo("Please provide your feedback in the form below");
+      }
     }
   }, [isModalOpen, template]);
 
@@ -203,6 +227,46 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     await submitFeedback(message, type as Feedback["type"], additionalData);
   };
 
+  // Style for submit button - memoized for performance
+  const submitButtonStyle = useMemo(() => {
+    const isFormValid = template.fields
+      .filter((field) => field.required)
+      .every((field) => {
+        const value = formData[field.id];
+        return value !== undefined && value !== "";
+      });
+
+    return {
+      padding: buttonStyles.buttonPadding || "0.75rem 1.5rem",
+      border: "none",
+      backgroundColor:
+        isSubmitting || !isFormValid
+          ? buttonStyles.disabledBackgroundColor || (theme === "dark" ? "#6b7280" : "#ccc")
+          : buttonStyles.primaryBackgroundColor || (theme === "dark" ? "#3b82f6" : "#007bff"),
+      color:
+        isSubmitting || !isFormValid
+          ? buttonStyles.disabledTextColor || "white"
+          : buttonStyles.primaryTextColor || "white",
+      borderRadius: buttonStyles.buttonBorderRadius || "4px",
+      cursor: isSubmitting || !isFormValid ? "not-allowed" : "pointer",
+      fontFamily: "inherit",
+    };
+  }, [buttonStyles, isSubmitting, formData, template.fields, theme]);
+
+  // Cancel button style - memoized for performance
+  const cancelButtonStyle = useMemo(
+    () => ({
+      padding: buttonStyles.buttonPadding || "0.75rem 1.5rem",
+      border: `1px solid ${buttonStyles.secondaryBorderColor || (theme === "dark" ? "#4b5563" : "#ccc")}`,
+      backgroundColor: buttonStyles.secondaryBackgroundColor || (theme === "dark" ? "#374151" : "white"),
+      color: buttonStyles.secondaryTextColor || (theme === "dark" ? "#e5e7eb" : "inherit"),
+      borderRadius: buttonStyles.buttonBorderRadius || "4px",
+      cursor: isSubmitting ? "not-allowed" : "pointer",
+      fontFamily: "inherit",
+    }),
+    [buttonStyles, isSubmitting, theme]
+  );
+
   // Render field based on its type
   const renderField = (field: TemplateField) => {
     const value = formData[field.id] !== undefined ? formData[field.id] : "";
@@ -231,6 +295,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       marginTop: "0.25rem",
     };
 
+    // Render appropriate field based on type
     switch (field.type) {
       case "select":
         return (
@@ -339,46 +404,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     }
   };
 
-  // Style for submit button
-  const submitButtonStyle = React.useMemo(
-    () => {
-      const isFormValid = template.fields
-        .filter((field) => field.required)
-        .every((field) => {
-          const value = formData[field.id];
-          return value !== undefined && value !== "";
-        });
-
-      return {
-        padding: buttonStyles.buttonPadding || "0.75rem 1.5rem",
-        border: "none",
-        backgroundColor:
-          isSubmitting || !isFormValid
-            ? buttonStyles.disabledBackgroundColor || (theme === "dark" ? "#6b7280" : "#ccc")
-            : buttonStyles.primaryBackgroundColor || (theme === "dark" ? "#3b82f6" : "#007bff"),
-        color:
-          isSubmitting || !isFormValid
-            ? buttonStyles.disabledTextColor || "white"
-            : buttonStyles.primaryTextColor || "white",
-        borderRadius: buttonStyles.buttonBorderRadius || "4px",
-        cursor: isSubmitting || !isFormValid ? "not-allowed" : "pointer",
-        fontFamily: "inherit",
-      };
-    },
-    [buttonStyles, isSubmitting, formData, template.fields, theme]
-  );
-
-  // Cancel button style
-  const cancelButtonStyle = {
-    padding: buttonStyles.buttonPadding || "0.75rem 1.5rem",
-    border: `1px solid ${buttonStyles.secondaryBorderColor || (theme === "dark" ? "#4b5563" : "#ccc")}`,
-    backgroundColor: buttonStyles.secondaryBackgroundColor || (theme === "dark" ? "#374151" : "white"),
-    color: buttonStyles.secondaryTextColor || (theme === "dark" ? "#e5e7eb" : "inherit"),
-    borderRadius: buttonStyles.buttonBorderRadius || "4px",
-    cursor: isSubmitting ? "not-allowed" : "pointer",
-    fontFamily: "inherit",
-  };
-
   // Early return if modal is not open
   if (!isModalOpen) return null;
 
@@ -444,7 +469,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {isOffline && (
-          <div style={{ marginBottom: "1rem", padding: "0.5rem", backgroundColor: theme === "dark" ? "#374151" : "#f3f4f6", borderRadius: "4px", fontSize: "0.875rem" }}>
+          <div
+            style={{
+              marginBottom: "1rem",
+              padding: "0.5rem",
+              backgroundColor: theme === "dark" ? "#374151" : "#f3f4f6",
+              borderRadius: "4px",
+              fontSize: "0.875rem",
+            }}
+            role="status"
+            aria-live="polite"
+          >
             <span role="img" aria-label="Warning">
               ⚠️
             </span>{" "}
@@ -463,16 +498,18 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
           </p>
         )}
 
-        {submitError && (
+        {/* Only show error display if Sonner is not available */}
+        {shouldShowInternalError && (
           <div
             style={errorDisplayStyle}
             role="alert"
+            aria-live="assertive"
           >
             {submitError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           {/* Standard template fields */}
           {template.fields.map(renderField)}
 
@@ -493,7 +530,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             onIdentityChange={setIdentity}
             config={{
               requiredIdentityFields: [],
-              rememberUserIdentity: true
+              rememberUserIdentity: true,
             }}
             disabled={isSubmitting}
           />
@@ -506,11 +543,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               maxAttachments: 3,
               maxAttachmentSize: 5 * 1024 * 1024,
               allowedAttachmentTypes: [
-                'image/jpeg',
-                'image/png',
-                'image/gif',
-                'application/pdf'
-              ]
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "application/pdf",
+              ],
             }}
             disabled={isSubmitting}
           />
@@ -536,7 +573,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             <button
               type="submit"
               disabled={
-                isSubmitting || template.fields
+                isSubmitting ||
+                template.fields
                   .filter((field) => field.required)
                   .some((field) => !formData[field.id])
               }

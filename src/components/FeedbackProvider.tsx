@@ -1,6 +1,7 @@
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from "react";
 import type { FeedbackContextType, Feedback, FeedbackConfig, FeedbackCategory } from "../types";
 import { generateId, validateFeedback, handleApiResponse } from "../utils";
+import { showError, showSuccess, showInfo } from "../utils/notifications";
 import { 
   saveFeedbackOffline, 
   getFeedbackFromStorage, 
@@ -100,6 +101,8 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
 
     if (pendingFeedback.length === 0) return;
 
+    showInfo(`Syncing ${pendingFeedback.length} pending feedback items...`);
+
     for (const feedback of pendingFeedback) {
       try {
         // Update status to show syncing
@@ -131,6 +134,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
                 : item
             )
           );
+          showError(`Failed to sync feedback: ${result.error}`);
           console.error('Failed to sync feedback:', result.error);
           continue;
         }
@@ -138,6 +142,8 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
         // Remove from offline storage if successfully synced
         removeFeedbackFromStorage(feedback.id);
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        showError(`Error syncing feedback: ${errorMessage}`);
         console.error('Error syncing feedback:', err);
         // Mark as failed
         setFeedbacks(prev => 
@@ -149,6 +155,8 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
         );
       }
     }
+    
+    showSuccess('Feedback synchronization complete');
   }, [config.apiEndpoint, config.enableOfflineSupport, feedbacks, isOffline]);
 
   // Submit new feedback
@@ -161,6 +169,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       const validation = validateFeedback(message);
       if (!validation.isValid) {
         setError(validation.error || "Invalid feedback");
+        showError(validation.error || "Invalid feedback");
         return;
       }
 
@@ -197,6 +206,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
             submissionStatus: 'pending' as const 
           };
           saveFeedbackOffline(feedbackWithStatus);
+          showInfo('Feedback saved locally and will be submitted when you\'re back online');
           closeModal();
           setIsSubmitting(false);
           return;
@@ -221,13 +231,20 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
                 submissionStatus: 'pending' as const 
               };
               saveFeedbackOffline(feedbackWithStatus);
+              showInfo('Feedback saved locally due to API error and will be submitted later');
             } else {
               // Remove from local state if API call failed and no offline support
               setFeedbacks((prev) => prev.filter((f) => f.id !== feedback.id));
               setError(result.error || "Failed to submit feedback");
+              showError(result.error || "Failed to submit feedback");
               return;
             }
+          } else {
+            showSuccess('Feedback submitted successfully!');
           }
+        } else {
+          // If no API endpoint, just show success for local storage
+          showSuccess('Feedback recorded successfully');
         }
 
         // Success - close modal
@@ -235,6 +252,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
         setError(errorMessage);
+        showError(errorMessage);
         
         // Store offline if error and offline support is enabled
         if (config.enableOfflineSupport) {
@@ -273,6 +291,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       
       if (existingFeedback.voters?.includes(voterId)) {
         setError("You have already voted for this feedback");
+        showInfo("You have already voted for this feedback");
         return;
       }
 
@@ -315,12 +334,19 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
               )
             );
             setError(result.error || "Failed to record vote");
+            showError(result.error || "Failed to record vote");
+          } else {
+            showSuccess('Vote recorded successfully');
           }
         } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+          showError(`Error voting for feedback: ${errorMessage}`);
           console.error('Error voting for feedback:', err);
           // Leave the vote in place even if API call fails
           // The vote will be in local state and can be synced later
         }
+      } else if (isOffline) {
+        showInfo('Your vote has been recorded locally and will sync when you\'re back online');
       }
     },
     [config.enableVoting, config.apiEndpoint, isOffline, feedbacks]

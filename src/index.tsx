@@ -5,7 +5,7 @@
  * featuring shake detection, customizable UI components, and TypeScript support.
  *
  * @author ArlindMaliqi
- * @version 1.0.0
+ * @version 1.4.0
  * @license MIT
  */
 
@@ -88,6 +88,12 @@ export {
   mapTypeToCategory,
   getCategoryDisplayName,
 } from "./utils/categories";
+export {
+  showError,
+  showSuccess,
+  showInfo,
+  isSonnerAvailable
+} from "./utils/notifications";
 
 // Default component setup for easy integration
 import React from "react";
@@ -137,6 +143,37 @@ interface FeedbackWidgetProps {
  * to your application with minimal setup.
  *
  * @param props - Widget configuration props
+ * @example
+ * ```tsx
+ * // Basic usage
+ * function App() {
+ *   return (
+ *     <div>
+ *       <YourAppContent />
+ *       <FeedbackWidget />
+ *     </div>
+ *   );
+ * }
+ * 
+ * // Advanced configuration
+ * function App() {
+ *   return (
+ *     <div>
+ *       <YourAppContent />
+ *       <FeedbackWidget 
+ *         config={{
+ *           apiEndpoint: '/api/feedback',
+ *           enableOfflineSupport: true,
+ *           enableAttachments: true
+ *         }}
+ *         template="bug-report"
+ *         theme="system"
+ *         animation={{ enter: 'zoom', exit: 'fade', duration: 300 }}
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
  */
 export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
   config = {},

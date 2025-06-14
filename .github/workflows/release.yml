@@ -107,9 +107,18 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Configure for GitHub Packages
+      - name: Create GitHub Package configuration with synchronized version
         run: |
+          # Extract version from main package.json
+          NPM_VERSION=$(node -p "require('./package.json').version")
+          echo "Using version: $NPM_VERSION"
+          
+          # Create GitHub package.json with the same version
+          jq ".name = \"@ArlindMaliqi/react-feedback-report-widget\" | .publishConfig.registry = \"https://npm.pkg.github.com\" | .version = \"$NPM_VERSION\"" package.json > package.github.json
           cp package.github.json package.json
+          cat package.json
+          
+          # Set up proper npmrc
           cp .npmrc.github .npmrc
 
       - name: Publish to GitHub Packages

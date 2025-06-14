@@ -27,7 +27,7 @@
     "prepublishOnly": "npm run build",
     "publish:github": "npm publish --registry=https://npm.pkg.github.com",
     "build:github": "npm run build && npm run package:github",
-    "package:github": "jq '.name = \"@ArlindMaliqi/react-feedback-report-widget\" | .publishConfig.registry = \"https://npm.pkg.github.com\"' package.json > package.github.json"
+    "package:github": "node -e \"const pkg = require('./package.json'); pkg.name = '@ArlindMaliqi/react-feedback-report-widget'; pkg.publishConfig.registry = 'https://npm.pkg.github.com'; require('fs').writeFileSync('package.github.json', JSON.stringify(pkg, null, 2));\""
   },
   "keywords": [
     "feedback",

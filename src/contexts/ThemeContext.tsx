@@ -1,8 +1,15 @@
-import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import type { ThemeContextType, ThemePreference } from '../types';
 
+/**
+ * Context for theme management throughout the application
+ * @public
+ */
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+/**
+ * Props for the ThemeProvider component
+ */
 interface ThemeProviderProps {
   /** Child components */
   children: ReactNode;
@@ -14,25 +21,42 @@ interface ThemeProviderProps {
  * Provider component for theme management
  * 
  * This component detects and responds to system or website theme settings.
- * It doesn't provide UI controls but ensures the feedback components
- * match the user's preferred theme.
+ * It provides theme context to all child components, enabling them to adapt
+ * their appearance based on the current theme.
  * 
  * @param props - Component props
  * @param props.children - Child components
  * @param props.initialTheme - Initial theme preference ('light', 'dark', or 'system')
+ * 
+ * @example
+ * ```tsx
+ * function App() {
+ *   return (
+ *     <ThemeProvider initialTheme="system">
+ *       <YourApp />
+ *     </ThemeProvider>
+ *   );
+ * }
+ * ```
  */
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
   children, 
   initialTheme = 'system' 
 }) => {
-  // Get system preference for dark mode
-  const getSystemTheme = (): 'light' | 'dark' => {
+  /**
+   * Gets system preference for dark mode
+   * @returns Current system theme preference
+   */
+  const getSystemTheme = useCallback((): 'light' | 'dark' => {
     if (typeof window === 'undefined') return 'light';
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  };
+  }, []);
 
-  // Detect website theme if available (by checking for theme classes on document body or html)
-  const getWebsiteTheme = (): 'light' | 'dark' | null => {
+  /**
+   * Detects website theme if available
+   * @returns Website theme or null if not detected
+   */
+  const getWebsiteTheme = useCallback((): 'light' | 'dark' | null => {
     if (typeof document === 'undefined') return null;
     
     const html = document.documentElement;
@@ -61,10 +85,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
     
     return null;
-  };
+  }, []);
 
-  // Get initial theme based on preference
-  const getInitialTheme = (): 'light' | 'dark' => {
+  /**
+   * Gets initial theme based on preference
+   * @returns Theme to initialize with
+   */
+  const getInitialTheme = useCallback((): 'light' | 'dark' => {
     if (initialTheme !== 'system') {
       return initialTheme;
     }
@@ -77,7 +104,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     
     // Fall back to system preference
     return getSystemTheme();
-  };
+  }, [initialTheme, getWebsiteTheme, getSystemTheme]);
 
   const [theme, setThemeState] = useState<'light' | 'dark'>(getInitialTheme());
   const [preference, setPreference] = useState<ThemePreference>(initialTheme);
@@ -109,14 +136,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
         mediaQuery.removeListener(handleChange);
       };
     }
-  }, [preference]);
+    
+    return undefined;
+  }, [preference, getWebsiteTheme]);
 
   // Listen for website theme changes
   useEffect(() => {
     if (preference !== 'system') return;
 
     // Use MutationObserver to detect class changes on body or html
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(() => {
       const websiteTheme = getWebsiteTheme();
       if (websiteTheme) {
         setThemeState(websiteTheme);
@@ -137,7 +166,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     });
 
     return () => observer.disconnect();
-  }, [preference]);
+  }, [preference, getWebsiteTheme, getSystemTheme]);
 
   // Toggle between light and dark
   const toggleTheme = useCallback(() => {
@@ -153,18 +182,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     setPreference(newTheme);
     
     if (newTheme === 'system') {
-      setThemeState(getSystemTheme());
+      const websiteTheme = getWebsiteTheme();
+      setThemeState(websiteTheme || getSystemTheme());
     } else {
       setThemeState(newTheme);
     }
-  }, []);
+  }, [getWebsiteTheme, getSystemTheme]);
 
-  // Provide context, but don't include toggleTheme since we're not exposing that
-  const value: ThemeContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<ThemeContextType>(() => ({
     theme,
     toggleTheme,
     setTheme
-  };
+  }), [theme, toggleTheme, setTheme]);
 
   return (
     <ThemeContext.Provider value={value}>

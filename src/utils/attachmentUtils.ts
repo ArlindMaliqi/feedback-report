@@ -142,14 +142,18 @@ export const captureScreenshot = async (): Promise<FeedbackAttachment | null> =>
     }
 
     // Use proper TypeScript declaration for display media options
-    // Fix TS2353 error by using the correct type annotation
-    const displayMediaOptions: DisplayMediaStreamOptions = { 
+    // Define browser-specific interface to fix TS error
+    interface CustomDisplayMediaStreamOptions extends DisplayMediaStreamOptions {
+      video?: boolean | MediaTrackConstraints;
+      audio?: boolean | MediaTrackConstraints;
+    }
+
+    const displayMediaOptions: CustomDisplayMediaStreamOptions = { 
       video: true,
-      // Use proper type assertion for browser-specific options
       audio: false
     };
-
-    // Request screen capture with proper types
+    
+    // Request screen capture
     const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
     
     // Create a video element to play the stream
@@ -159,7 +163,7 @@ export const captureScreenshot = async (): Promise<FeedbackAttachment | null> =>
     // Wait for video to load enough data
     await new Promise<void>(resolve => {
       video.onloadedmetadata = () => {
-        video.play();
+        video.play().catch(console.error);
         resolve();
       };
     });
