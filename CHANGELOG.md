@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/ArlindMaliqi/feedback-report/compare/v1.3.1...v1.3.2) (2025-06-14)
+
+
+### Bug Fixes
+
+* update GitHub Packages publishing configuration ([58b7637](https://github.com/ArlindMaliqi/feedback-report/commit/58b7637d073c417f9867de87b3ce59a5101eab8f))
+
 ## [1.3.1](https://github.com/ArlindMaliqi/feedback-report/compare/v1.3.0...v1.3.1) (2025-06-13)
 
 
