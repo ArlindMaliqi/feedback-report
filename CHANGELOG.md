@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.3.2...v1.4.0) (2025-06-14)
+
+
+### Features
+
+* Add comprehensive feedback functionality with attachments, categories, and offline support ([4671d40](https://github.com/ArlindMaliqi/feedback-report/commit/4671d40e7f5ea56e720fc45a0d8055693b304f62))
+
 ## [1.3.2](https://github.com/ArlindMaliqi/feedback-report/compare/v1.3.1...v1.3.2) (2025-06-14)
 
 
