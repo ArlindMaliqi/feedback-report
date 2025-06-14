@@ -21,6 +21,7 @@
     "build": "npm run clean && npm run build:main && npm run build:esm",
     "build:main": "NODE_ENV=production webpack --mode=production --env format=umd",
     "build:esm": "NODE_ENV=production webpack --mode=production --env format=esm",
+    "build:compressed": "npm run build && COMPRESS=true npm run build:main && COMPRESS=true npm run build:esm",
     "clean": "rimraf dist",
     "prepare": "npm run build",
     "test": "NODE_ENV=test jest --passWithNoTests",

@@ -14,6 +14,7 @@ const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProduction = nodeEnv === 'production';
 const shouldAnalyze = process.env.ANALYZE === 'true';
+const shouldCompress = process.env.COMPRESS === 'true' && isProduction;
 
 const createConfig = (format = 'umd') => {
   const isESM = format === 'esm';
@@ -91,12 +92,15 @@ const createConfig = (format = 'umd') => {
       new webpack.DefinePlugin({
         'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       }),
-      ...(isProduction ? [
+      // Only add compression plugin when explicitly requested
+      ...(shouldCompress ? [
         new CompressionPlugin({
           algorithm: 'gzip',
           test: /\.(js|css|html|svg)$/,
           threshold: 8192,
           minRatio: 0.8,
+          filename: '[path][base].gz',
+          deleteOriginalAssets: false, // Keep original files
         }),
       ] : []),
       ...(shouldAnalyze && !isESM ? [new BundleAnalyzerPlugin()] : []),
