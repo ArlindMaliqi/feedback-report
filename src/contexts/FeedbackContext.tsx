@@ -2,7 +2,7 @@
  * Feedback and Localization Context definitions
  * @module contexts/FeedbackContext
  */
-import React, { createContext } from 'react';
+import { createContext } from 'react';
 import type { FeedbackContextType } from '../types';
 
 /**

@@ -13,7 +13,6 @@ import type {
 import { generateId, validateFeedback, handleApiResponse } from "../utils";
 import { showError, showSuccess, showInfo } from "../utils/notifications";
 import { 
-  saveFeedbackOffline, 
   getFeedbackFromStorage, 
   removeFeedbackFromStorage,
   registerConnectivityListeners,
@@ -47,21 +46,17 @@ export const LocalizationContext = createContext<{
 });
 
 /**
- * Configuration properties for the FeedbackProvider component
- * @interface FeedbackProviderProps
+ * Props for the FeedbackProvider component
  */
-interface FeedbackProviderProps {
-  /** Child components that will have access to the feedback context */
+export interface FeedbackProviderProps {
+  /** Child components */
   children: ReactNode;
-  /** Configuration options for the feedback system */
+  /** Configuration for the feedback system */
   config?: FeedbackConfig;
-  /** Test-only properties for mocking behavior in test environments */
+  /** Test props (for testing only) */
   _testProps?: {
-    /** Initial feedback data for testing */
-    initialFeedback?: Feedback[];
-    /** Whether the modal should be open initially */
     modalOpen?: boolean;
-    /** Disable network requests for testing */
+    initialFeedback?: Feedback[];
     disableNetworkRequests?: boolean;
   };
 }
@@ -115,56 +110,9 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState<boolean>(checkIsOffline());
-  const [categories, setCategories] = useState<FeedbackCategory[]>(
+  const [categories] = useState<FeedbackCategory[]>(
     config.categories || defaultCategories
   );
-
-  /**
-   * Effect to handle offline support initialization and connectivity monitoring
-   */
-  useEffect(() => {
-    if (config.enableOfflineSupport) {
-      // Load any pending feedback from storage
-      const storedFeedback = getFeedbackFromStorage();
-      if (storedFeedback.length > 0) {
-        setFeedbacks(prev => [...storedFeedback, ...prev]);
-      }
-      
-      // Set up online/offline listeners
-      const cleanup = registerConnectivityListeners(
-        // Online callback
-        () => {
-          setIsOffline(false);
-          // Auto-sync pending feedback when connection is restored
-          if (config.apiEndpoint) {
-            syncOfflineFeedback();
-          }
-        },
-        // Offline callback
-        () => {
-          setIsOffline(true);
-        }
-      );
-      
-      return cleanup;
-    }
-  }, [config.enableOfflineSupport, config.apiEndpoint]);
-
-  /**
-   * Opens the feedback modal and clears any existing errors
-   */
-  const openModal = useCallback(() => {
-    setModalOpen(true);
-    setError(null);
-  }, []);
-
-  /**
-   * Closes the feedback modal and clears any existing errors
-   */
-  const closeModal = useCallback(() => {
-    setModalOpen(false);
-    setError(null);
-  }, []);
 
   // Localization setup with memoized values for performance
   const localizationConfig: LocalizationConfig = config.localization || {};
@@ -263,6 +211,53 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
   }, [config, feedbacks, isOffline, t]);
 
   /**
+   * Effect to handle offline support initialization and connectivity monitoring
+   */
+  useEffect(() => {
+    if (config.enableOfflineSupport) {
+      // Load any pending feedback from storage
+      const storedFeedback = getFeedbackFromStorage();
+      if (storedFeedback.length > 0) {
+        setFeedbacks(prev => [...storedFeedback, ...prev]);
+      }
+      
+      // Set up online/offline listeners
+      const cleanup = registerConnectivityListeners(
+        // Online callback
+        () => {
+          setIsOffline(false);
+          // Auto-sync pending feedback when connection is restored
+          if (config.apiEndpoint) {
+            syncOfflineFeedback();
+          }
+        },
+        // Offline callback
+        () => {
+          setIsOffline(true);
+        }
+      );
+      
+      return cleanup;
+    }
+  }, [config.enableOfflineSupport, config.apiEndpoint, syncOfflineFeedback]);
+
+  /**
+   * Opens the feedback modal and clears any existing errors
+   */
+  const openModal = useCallback(() => {
+    setModalOpen(true);
+    setError(null);
+  }, []);
+
+  /**
+   * Closes the feedback modal and clears any existing errors
+   */
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+    setError(null);
+  }, []);
+
+  /**
    * Submits new feedback with validation, API integration, and error handling
    * @param message - The feedback message content
    * @param type - The type of feedback (bug, feature, improvement, other)
@@ -300,24 +295,37 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
           return;
         }
 
-        // Submit to API if not disabled in tests
-        if (!_testProps?.disableNetworkRequests && config.apiEndpoint) {
-          const response = await fetch(config.apiEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newFeedback)
-          });
+        // Submit to API if not in test mode
+        if (newFeedback.submissionStatus !== 'failed') {
+          if (!_testProps?.disableNetworkRequests && config.apiEndpoint) {
+            const response = await fetch(config.apiEndpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(newFeedback)
+            });
 
-          await handleApiResponse(response);
+            const result = await handleApiResponse(response);
+            
+            if (!result.success) {
+              // Mark as failed if API call failed
+              newFeedback.submissionStatus = 'failed';
+              showError(t('notification.error', { message: result.error || 'Unknown error' }));
+              console.error('Failed to submit feedback:', result.error);
+            } else {
+              newFeedback.submissionStatus = 'synced';
+            }
+          }
+
+          // Process integrations if submission was successful
+          if (newFeedback.submissionStatus !== 'failed') {
+            await processIntegrations(newFeedback, config);
+          }
         }
 
         // Update local state
         setFeedbacks(prev => [newFeedback, ...prev]);
-
-        // Process integrations if configured
-        if (config.analytics || config.issueTracker || config.webhooks || config.notifications) {
-          await processIntegrations(newFeedback, config);
-        }
 
         showSuccess(t('notification.success'));
         closeModal();

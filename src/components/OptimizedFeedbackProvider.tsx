@@ -3,24 +3,19 @@
  * @module components/OptimizedFeedbackProvider
  */
 import React, { 
-  createContext, 
   useState, 
   ReactNode, 
   useCallback, 
   useEffect, 
-  useMemo,
-  lazy,
-  Suspense
+  useMemo
 } from "react";
 import type { 
   FeedbackContextType, 
   Feedback, 
-  FeedbackConfig, 
-  FeedbackCategory, 
-  LocalizationConfig 
+  FeedbackConfig
 } from "../types";
 import { generateId, validateFeedback, handleApiResponse } from "../utils";
-import { showError, showSuccess, showInfo } from "../utils/notifications";
+import { showError, showSuccess } from "../utils/notifications";
 import { defaultCategories } from "../utils/categories";
 import { createTranslator, getDirection } from "../utils/localization";
 import { SSRSafeComponent } from "../core/SSRSafeComponent";
@@ -71,7 +66,7 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  const [isOffline, setIsOffline] = useState(false);
+  const [isOffline] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Lazy loading state for integrations
@@ -125,7 +120,7 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
    */
   useEffect(() => {
     if (config.analytics || config.issueTracker || config.webhooks || config.notifications) {
-      loadIntegrations();
+      void loadIntegrations();
     }
   }, [config, loadIntegrations]);
 
@@ -133,7 +128,7 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
    * Synchronizes offline feedback when connection is restored
    * @returns Promise that resolves when sync is complete
    */
-  const syncOfflineFeedback = useCallback(async () => {
+  const syncOfflineFeedback = useCallback(async (): Promise<void> => {
     if (isOffline) {
       // Sync logic implementation would go here
       console.log('Syncing offline feedback...');
@@ -236,7 +231,7 @@ export const OptimizedFeedbackProvider: React.FC<OptimizedFeedbackProviderProps>
       try {
         // Process vote through integrations if loaded
         if (integrationModules.processVoteIntegrations) {
-          integrationModules.processVoteIntegrations(id, config);
+          await integrationModules.processVoteIntegrations(id, config);
         }
 
         // Update local state optimistically

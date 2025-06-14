@@ -1,5 +1,7 @@
 import React from 'react';
-import { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react';
+import { FeedbackProvider } from '../components/FeedbackProvider';
+import { FeedbackButton } from '../components/FeedbackButton';
 import { FeedbackWidget } from '../index';
 import { defaultCategories } from '../utils/categories';
 import { bugReportTemplate, featureRequestTemplate, defaultTemplate } from '../utils/templates';

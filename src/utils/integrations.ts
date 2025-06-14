@@ -61,7 +61,7 @@ export const processVoteIntegrations = async (
 /**
  * Process analytics integration
  */
-const processAnalytics = async (feedback: Feedback, analyticsConfig: any): Promise<void> => {
+const processAnalytics = async (feedback: Feedback, _analyticsConfig: any): Promise<void> => {
   try {
     // Implementation would depend on the analytics provider
     console.log('Analytics processed for feedback:', feedback.id);
@@ -73,7 +73,7 @@ const processAnalytics = async (feedback: Feedback, analyticsConfig: any): Promi
 /**
  * Process issue tracker integration
  */
-const processIssueTracker = async (feedback: Feedback, issueConfig: any): Promise<void> => {
+const processIssueTracker = async (feedback: Feedback, _issueConfig: any): Promise<void> => {
   try {
     // Implementation would create issues in GitHub, Jira, etc.
     console.log('Issue tracker processed for feedback:', feedback.id);
@@ -85,7 +85,7 @@ const processIssueTracker = async (feedback: Feedback, issueConfig: any): Promis
 /**
  * Process webhook integration
  */
-const processWebhooks = async (feedback: Feedback, webhookConfig: any): Promise<void> => {
+const processWebhooks = async (feedback: Feedback, _webhookConfig: any): Promise<void> => {
   try {
     // Implementation would send webhooks to configured endpoints
     console.log('Webhooks processed for feedback:', feedback.id);
@@ -97,7 +97,7 @@ const processWebhooks = async (feedback: Feedback, webhookConfig: any): Promise<
 /**
  * Process notification integration
  */
-const processNotifications = async (feedback: Feedback, notificationConfig: any): Promise<void> => {
+const processNotifications = async (feedback: Feedback, _notificationConfig: any): Promise<void> => {
   try {
     // Implementation would send notifications to Slack, Teams, etc.
     console.log('Notifications processed for feedback:', feedback.id);

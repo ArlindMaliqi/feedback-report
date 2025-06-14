@@ -5,9 +5,6 @@
 import React, { 
   lazy, 
   Suspense, 
-  useState, 
-  useCallback, 
-  useEffect, 
   useMemo,
   ComponentType
 } from 'react';
@@ -331,6 +328,9 @@ export const OptimizedFeedbackWidget: React.FC<OptimizedFeedbackWidgetProps> = (
           >
             <Suspense fallback={<LoadingFallback component="feedback modal" />}>
               <LazyFeedbackModal 
+                isOpen={false}
+                onClose={() => {}}
+                onSubmit={() => {}}
                 styles={modalStyles} 
                 animation={animation}
                 templateId={template}

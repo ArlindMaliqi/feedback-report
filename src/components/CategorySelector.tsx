@@ -1,5 +1,5 @@
 /**
- * Category selector component
+ * Category selector component for feedback categorization
  * @module components/CategorySelector
  */
 import React, { useState, useEffect } from 'react';

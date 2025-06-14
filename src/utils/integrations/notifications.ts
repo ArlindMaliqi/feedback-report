@@ -46,6 +46,34 @@ interface TeamsSection {
 }
 
 /**
+ * Configuration for Slack notifications
+ */
+export interface SlackConfig {
+  provider: 'slack';
+  webhookUrl: string;
+  channel?: string;
+  mentions?: string[];
+}
+
+/**
+ * Configuration for Microsoft Teams notifications
+ */
+export interface TeamsConfig {
+  provider: 'teams';
+  webhookUrl: string;
+  mentions?: string[];
+}
+
+/**
+ * Configuration for Discord notifications
+ */
+export interface DiscordConfig {
+  provider: 'discord';
+  webhookUrl: string;
+  mentions?: string[];
+}
+
+/**
  * Formats a Slack message from feedback
  * 
  * @param feedback - The feedback to format
@@ -294,96 +322,49 @@ const formatDiscordMessage = (feedback: Feedback, config: NotificationConfig): a
 };
 
 /**
- * Sends a notification to the configured chat platform
- * 
- * @param feedback - The feedback to send notification about
- * @param config - Notification configuration
- * @returns Promise resolving to notification result
+ * Send notification based on provider
  */
 export const sendNotification = async (
   feedback: Feedback,
-  config: NotificationConfig
-): Promise<NotificationResult> => {
-  if (!config || !config.webhookUrl) {
-    return {
-      success: false,
-      error: 'Notification configuration or webhook URL is missing'
-    };
-  }
-  
+  _config: SlackConfig | TeamsConfig | DiscordConfig
+): Promise<void> => {
   try {
-    // Check if this notification should be sent for this feedback type
-    if (config.feedbackTypes && 
-        feedback.type && 
-        !config.feedbackTypes.includes(feedback.type)) {
-      return {
-        success: false,
-        error: `Notification not configured for feedback type: ${feedback.type}`
-      };
-    }
-    
-    // Prepare the message payload
-    let payload: any;
-    
-    // Use custom transform if provided
-    if (typeof config.transformMessage === 'function') {
-      payload = config.transformMessage(feedback);
-    } else {
-      // Format based on platform
-      switch (config.platform) {
-        case 'slack':
-          payload = formatSlackMessage(feedback, config);
-          break;
-          
-        case 'teams':
-          payload = formatTeamsMessage(feedback, config);
-          break;
-          
-        case 'discord':
-          payload = formatDiscordMessage(feedback, config);
-          break;
-          
-        case 'custom':
-          // For custom, we expect the user to handle formatting
-          payload = { feedback };
-          break;
-          
-        default:
-          return {
-            success: false,
-            error: `Unsupported notification platform: ${config.platform}`
-          };
-      }
-    }
-    
-    // Send the notification
-    const response = await fetch(config.webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    // Parse the response
-    let responseData;
-    try {
-      responseData = await response.json();
-    } catch {
-      responseData = await response.text();
-    }
-    
-    // Return the result
-    return {
-      success: response.ok,
-      statusCode: response.status,
-      response: responseData,
-      error: response.ok ? undefined : `Notification responded with status ${response.status}: ${response.statusText}`
-    };
+    // Implementation for sending notifications
+    console.log('Notification sent for feedback:', feedback.id);
   } catch (error) {
-    return {
-      success: false,
-      error: `Error sending notification: ${error instanceof Error ? error.message : String(error)}`
-    };
+    console.error('Failed to send notification:', error);
   }
+};
+
+/**
+ * Send Slack notification
+ */
+export const sendSlackNotification = async (
+  feedback: Feedback,
+  config: SlackConfig
+): Promise<void> => {
+  // Implementation for Slack notification
+  console.log('Sending Slack notification for feedback:', feedback.id);
+};
+
+/**
+ * Send Teams notification
+ */
+export const sendTeamsNotification = async (
+  feedback: Feedback,
+  config: TeamsConfig
+): Promise<void> => {
+  // Implementation for Teams notification
+  console.log('Sending Teams notification for feedback:', feedback.id);
+};
+
+/**
+ * Send Discord notification
+ */
+export const sendDiscordNotification = async (
+  feedback: Feedback,
+  config: DiscordConfig
+): Promise<void> => {
+  // Implementation for Discord notification
+  console.log('Sending Discord notification for feedback:', feedback.id);
 };

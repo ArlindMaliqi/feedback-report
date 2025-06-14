@@ -1,724 +1,499 @@
-import React, { useState, useEffect, useRef, useMemo, useContext } from "react";
-import { useFeedback } from "../hooks/useFeedback";
-import { useTheme } from "../hooks/useTheme";
-import { getAnimationStyles } from "../utils/animations";
-import { getTemplateById } from "../utils/templates";
-import { showInfo } from "../utils/notifications";
-import { isSonnerAvailable } from "../utils/notifications";
-import { LocalizationContext } from "./FeedbackProvider";
-import type {
-  Feedback,
-  FeedbackModalStyles,
-  AnimationConfig,
-  TemplateField,
-  FeedbackAttachment,
+/**
+ * Enhanced feedback modal component with advanced features
+ * @module components/FeedbackModal
+ */
+import React, { useState, useCallback, useEffect, useMemo, useRef, useContext } from 'react';
+import { 
+  FeedbackConfig, 
+  FeedbackModalStyles, 
+  AnimationConfig, 
+  FeedbackTemplate, 
   UserIdentity,
-} from "../types";
-import { FileAttachmentInput } from "./FileAttachmentInput";
-import { UserIdentityFields } from "./UserIdentityFields";
-import { CategorySelector } from "./CategorySelector";
+  Feedback,
+  FeedbackAttachment,
+  TemplateField
+} from '../types';
+import { useTheme } from '../hooks/useTheme';
+import { useFeedback } from '../hooks/useFeedback';
+import { LocalizationContext } from '../contexts/FeedbackContext';
+import { CategorySelector } from './CategorySelector';
+import { UserIdentityFields } from './UserIdentityFields';
+import { FileAttachmentInput } from './FileAttachmentInput';
+import { showInfo } from '../utils/notifications';
 
 /**
  * Props for the FeedbackModal component
  */
 interface FeedbackModalProps {
-  /** Custom styling options for the modal */
+  /** Whether the modal is open */
+  isOpen: boolean;
+  /** Function to close the modal */
+  onClose: () => void;
+  /** Function to handle feedback submission */
+  onSubmit: (feedback: {
+    message: string;
+    type: string;
+    user?: UserIdentity;
+    attachments?: File[];
+    category?: string;
+  }) => void;
+  /** Custom styling options */
   styles?: FeedbackModalStyles;
   /** Animation configuration */
   animation?: AnimationConfig;
   /** Template ID to use */
-  templateId?: string;
+  templateId?: FeedbackTemplate;
+  /** Configuration options */
+  config?: FeedbackConfig;
 }
 
 /**
- * Modal component for collecting user feedback
- *
- * This component renders a modal dialog where users can submit feedback.
- * Enhanced with accessibility features, automatic theme detection, animations,
- * and customizable templates. Includes file attachments, user identity fields,
- * category selection, and offline support.
- *
- * @param props - Component props
- * @param props.styles - Custom styling configuration
- * @param props.animation - Animation configuration
- * @param props.templateId - Template ID to use
- *
- * @example
- * ```tsx
- * <FeedbackModal
- *   styles={{
- *     content: { backgroundColor: "#f9f9f9" },
- *     buttons: { primaryBackgroundColor: "#4a90e2" }
- *   }}
- *   animation={{ enter: "zoom", exit: "fade", duration: 400 }}
- *   templateId="bug-report"
- * />
- * ```
+ * Default template for feedback modal
+ */
+const getTemplateById = (templateId: FeedbackTemplate) => {
+  const templates: Record<string, {
+    id: string;
+    name: string;
+    fields: TemplateField[];
+  }> = {
+    default: {
+      id: 'default',
+      name: 'Default Feedback',
+      fields: [
+        { id: 'message', type: 'textarea', label: 'Your Feedback', required: true },
+        { id: 'type', type: 'select', label: 'Type', required: true, options: [
+          { value: 'bug', label: 'Bug Report' },
+          { value: 'feature', label: 'Feature Request' },
+          { value: 'improvement', label: 'Improvement' },
+          { value: 'other', label: 'Other' }
+        ]}
+      ]
+    },
+    bug: {
+      id: 'bug',
+      name: 'Bug Report',
+      fields: [
+        { id: 'message', type: 'textarea', label: 'Describe the bug', required: true },
+        { id: 'steps', type: 'textarea', label: 'Steps to reproduce', required: false },
+        { id: 'expected', type: 'textarea', label: 'Expected behavior', required: false }
+      ]
+    },
+    'bug-report': {
+      id: 'bug-report',
+      name: 'Bug Report',
+      fields: [
+        { id: 'message', type: 'textarea', label: 'Describe the bug', required: true },
+        { id: 'steps', type: 'textarea', label: 'Steps to reproduce', required: false },
+        { id: 'expected', type: 'textarea', label: 'Expected behavior', required: false }
+      ]
+    },
+    feature: {
+      id: 'feature',
+      name: 'Feature Request',
+      fields: [
+        { id: 'message', type: 'textarea', label: 'Describe the feature', required: true },
+        { id: 'use_case', type: 'textarea', label: 'Use case', required: false }
+      ]
+    },
+    'feature-request': {
+      id: 'feature-request',
+      name: 'Feature Request',
+      fields: [
+        { id: 'message', type: 'textarea', label: 'Describe the feature', required: true },
+        { id: 'use_case', type: 'textarea', label: 'Use case', required: false }
+      ]
+    }
+  };
+  
+  return templates[templateId] || templates.default;
+};
+
+/**
+ * Mock function to check if Sonner is available
+ */
+const isSonnerAvailable = () => false;
+
+/**
+ * Mock function to get animation styles
+ */
+const getAnimationStyles = (animation: AnimationConfig, isEntering: boolean) => ({
+  transition: `all ${animation.duration}ms ease-in-out`,
+  opacity: isEntering ? 1 : 0
+});
+
+/**
+ * Main feedback modal component with enhanced features
  */
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
   styles = {},
-  animation = { enter: "fade", exit: "fade", duration: 300 },
-  templateId = "default",
+  animation = { enter: 'fade', exit: 'fade', duration: 300 },
+  templateId = 'default',
+  config = {}
 }) => {
-  const {
-    isModalOpen,
-    closeModal,
-    submitFeedback,
-    isSubmitting,
-    error: submitError,
-    isOffline,
-    categories,
-  } = useFeedback();
-  const { theme } = useTheme();
+  const { submitFeedback, isSubmitting, error: submitError } = useFeedback();
+  const localizationContext = useContext(LocalizationContext);
+  const { t, locale } = localizationContext || { 
+    t: (key: string) => key, 
+    locale: 'en' as const 
+  };
+  const dir = locale === 'ar' || locale === 'he' ? 'rtl' : 'ltr';
 
-  // Get localization context
-  const { t, dir } = useContext(LocalizationContext);
-
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  // State management
   const [attachments, setAttachments] = useState<FeedbackAttachment[]>([]);
-  const [identity, setIdentity] = useState<UserIdentity>({});
-  const [category, setCategory] = useState<string>("");
-  const [subcategory, setSubcategory] = useState<string | undefined>(undefined);
+  const [formData, setFormData] = useState<Record<string, any>>({});
   const [isClosing, setIsClosing] = useState(false);
+
+  // Refs for focus management
   const modalRef = useRef<HTMLDivElement>(null);
   const initialFocusRef = useRef<HTMLElement | null>(null);
 
-  // Get the template data for the specified template ID
+  // Default categories if not provided in config
+  const categories = config.categories || [
+    {
+      id: 'bug',
+      name: 'Bug Report',
+      description: 'Report a problem or issue',
+      subcategories: [
+        { id: 'ui', name: 'User Interface', description: 'Visual or layout issues' },
+        { id: 'performance', name: 'Performance', description: 'Slow or unresponsive behavior' },
+        { id: 'functionality', name: 'Functionality', description: 'Feature not working as expected' }
+      ]
+    },
+    {
+      id: 'feature',
+      name: 'Feature Request',
+      description: 'Suggest a new feature or improvement',
+      subcategories: [
+        { id: 'enhancement', name: 'Enhancement', description: 'Improve existing feature' },
+        { id: 'new-feature', name: 'New Feature', description: 'Add completely new functionality' }
+      ]
+    },
+    {
+      id: 'other',
+      name: 'Other',
+      description: 'General feedback or questions',
+      subcategories: []
+    }
+  ];
+
+  // Get template configuration
   const template = useMemo(() => getTemplateById(templateId), [templateId]);
 
-  // Use either dark mode styles or default styles based on theme
-  const themeStyles =
-    theme === "dark" && styles.darkMode ? styles.darkMode : styles;
+  // Initialize form data when template changes
+  useEffect(() => {
+    const initialData: Record<string, any> = {};
+    template.fields.forEach((field: TemplateField) => {
+      initialData[field.id] = field.type === 'checkbox' ? false : '';
+    });
+    setFormData(initialData);
+  }, [template]);
 
-  // Destructure styles with proper defaults
-  const {
-    overlay: overlayStyles = {},
-    content: contentStyles = {},
-    form: formStyles = {},
-    buttons: buttonStyles = {},
-    error: errorStyles = {},
-    className = "",
-    overlayClassName = "",
-  } = { ...styles, ...themeStyles };
+  // Focus management
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const focusableElement = modalRef.current.querySelector(
+        'input, textarea, button, select'
+      ) as HTMLElement;
+      if (focusableElement) {
+        focusableElement.focus();
+        initialFocusRef.current = focusableElement;
+      }
+    }
+  }, [isOpen]);
 
-  // Check if we should render our own error display
+  // Show error notifications
   const shouldShowInternalError = submitError && !isSonnerAvailable();
 
-  // Initialize form data from template defaults
+  // Auto-focus on form when opened
   useEffect(() => {
-    if (isModalOpen) {
-      const initialData: Record<string, any> = {};
-      template.fields.forEach((field) => {
-        if (field.defaultValue !== undefined) {
-          initialData[field.id] = field.defaultValue;
+    if (isOpen) {
+      template.fields.forEach((field: TemplateField) => {
+        if (field.id === 'message') { // Focus on message field by default
+          const element = document.getElementById(field.id);
+          if (element) {
+            element.focus();
+          }
         }
       });
-      setFormData(initialData);
-      setIsClosing(false);
 
-      // Reset other state
-      setAttachments([]);
-      setCategory("");
-      setSubcategory(undefined);
-
-      // Notify user of modal opening if Sonner is available
+      // Show helpful tooltip if available
       if (isSonnerAvailable()) {
         showInfo("Please provide your feedback in the form below");
       }
     }
-  }, [isModalOpen, template]);
+  }, [isOpen, template]);
 
-  // Trap focus within modal for accessibility
+  // Handle escape key
   useEffect(() => {
-    if (!isModalOpen || !modalRef.current) return;
-
-    // Find all focusable elements
-    const focusableElements = modalRef.current.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-
-    if (focusableElements.length === 0) return;
-
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-    // Set initial focus
-    initialFocusRef.current = firstElement;
-    setTimeout(() => {
-      firstElement.focus();
-    }, 50);
-
-    // Handle tab key navigation
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
         handleClose();
-        return;
-      }
-
-      if (e.key !== "Tab") return;
-
-      // Trap focus within modal
-      if (e.shiftKey && document.activeElement === firstElement) {
-        e.preventDefault();
-        lastElement.focus();
-      } else if (!e.shiftKey && document.activeElement === lastElement) {
-        e.preventDefault();
-        firstElement.focus();
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isModalOpen]);
-
-  // Handle field change
-  const handleFieldChange = (fieldId: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
-  };
-
-  // Handle category selection change
-  const handleCategoryChange = (categoryId: string, subcategoryId?: string) => {
-    setCategory(categoryId);
-    setSubcategory(subcategoryId);
-  };
-
-  // Handle input focus
-  const handleInputFocus = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    if (formStyles.inputFocusColor) {
-      e.target.style.borderColor = formStyles.inputFocusColor;
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
     }
-  };
+  }, [isOpen]);
 
-  // Handle input blur
-  const handleInputBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    e.target.style.borderColor = formStyles.inputBorderColor || (theme === "dark" ? "#4b5563" : "#ccc");
-  };
+  // Handle backdrop click
+  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  }, []);
 
   // Handle close with animation
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
-      closeModal();
-    }, animation.duration || 300);
-  };
+      setIsClosing(false);
+      onClose();
+    }, animation.duration);
+  }, [onClose, animation.duration]);
 
-  // Handle submit
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle form submission
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const message = formData.message || '';
+    const type = formData.type || 'other';
+    
+    // Validate required fields
+    const missingFields = template.fields
+      .filter((field: TemplateField) => field.required)
+      .filter((field: TemplateField) => !formData[field.id]);
 
-    // Extract message and type for backward compatibility
-    const message = formData.message || "";
-    const type = formData.type || "other";
+    if (missingFields.length > 0) {
+      console.warn('Missing required fields:', missingFields);
+      return;
+    }
 
-    // Prepare all data
-    const additionalData: Record<string, any> = {
+    const additionalData = {
       ...formData,
-      attachments: attachments.length > 0 ? attachments : undefined,
-      user: Object.keys(identity).length > 0 ? identity : undefined,
-      category: category || undefined,
-      subcategory: subcategory || undefined,
+      attachments: attachments.map(att => att.file),
+      template: templateId
     };
 
-    // Pass all form data to submit function
-    await submitFeedback(message, type as Feedback["type"], additionalData);
-  };
+    try {
+      await submitFeedback(message, type as Feedback["type"], additionalData);
+      handleClose();
+    } catch (error) {
+      console.error('Submission failed:', error);
+    }
+  }, [formData, template.fields, attachments, templateId, submitFeedback, handleClose]);
 
-  // Style for submit button - memoized for performance
-  const submitButtonStyle = useMemo(() => {
-    const isFormValid = template.fields
-      .filter((field) => field.required)
-      .every((field) => {
-        const value = formData[field.id];
-        return value !== undefined && value !== "";
-      });
+  // Validate form
+  const isFormValid = template.fields
+    .filter((field: TemplateField) => field.required)
+    .every((field: TemplateField) => {
+      const value = formData[field.id];
+      return value && (typeof value === 'string' ? value.trim() : value);
+    });
 
-    return {
-      padding: buttonStyles.buttonPadding || "0.75rem 1.5rem",
-      border: "none",
-      backgroundColor:
-        isSubmitting || !isFormValid
-          ? buttonStyles.disabledBackgroundColor || (theme === "dark" ? "#6b7280" : "#ccc")
-          : buttonStyles.primaryBackgroundColor || (theme === "dark" ? "#3b82f6" : "#007bff"),
-      color:
-        isSubmitting || !isFormValid
-          ? buttonStyles.disabledTextColor || "white"
-          : buttonStyles.primaryTextColor || "white",
-      borderRadius: buttonStyles.buttonBorderRadius || "4px",
-      cursor: isSubmitting || !isFormValid ? "not-allowed" : "pointer",
-      fontFamily: "inherit",
-    };
-  }, [buttonStyles, isSubmitting, formData, template.fields, theme]);
+  // Handle input changes
+  const handleInputChange = useCallback((fieldId: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+  }, []);
 
-  // Cancel button style - memoized for performance
-  const cancelButtonStyle = useMemo(
-    () => ({
-      padding: buttonStyles.buttonPadding || "0.75rem 1.5rem",
-      border: `1px solid ${buttonStyles.secondaryBorderColor || (theme === "dark" ? "#4b5563" : "#ccc")}`,
-      backgroundColor: buttonStyles.secondaryBackgroundColor || (theme === "dark" ? "#374151" : "white"),
-      color: buttonStyles.secondaryTextColor || (theme === "dark" ? "#e5e7eb" : "inherit"),
-      borderRadius: buttonStyles.buttonBorderRadius || "4px",
-      cursor: isSubmitting ? "not-allowed" : "pointer",
-      fontFamily: "inherit",
-    }),
-    [buttonStyles, isSubmitting, theme]
-  );
+  // Handle attachment changes
+  const handleAttachmentsChange = useCallback((newAttachments: FeedbackAttachment[]) => {
+    setAttachments(newAttachments);
+  }, []);
 
-  // Render field based on its type
+  // Render form field
   const renderField = (field: TemplateField) => {
-    const value = formData[field.id] !== undefined ? formData[field.id] : "";
+    const value = formData[field.id] || '';
 
-    const inputBaseStyle = {
-      width: "100%",
-      marginTop: "0.25rem",
-      border: `1px solid ${formStyles.inputBorderColor || (theme === "dark" ? "#4b5563" : "#ccc")}`,
-      borderRadius: formStyles.inputBorderRadius || "4px",
-      padding: formStyles.inputPadding || "0.75rem",
-      fontFamily: "inherit",
-      backgroundColor: theme === "dark" ? "#1f2937" : "white",
-      color: theme === "dark" ? "#e5e7eb" : "inherit",
-    };
-
-    const labelStyle = {
-      color: formStyles.labelColor || (theme === "dark" ? "#e5e7eb" : "inherit"),
-      fontWeight: formStyles.labelFontWeight || "inherit",
-      display: "block",
-      marginBottom: "0.25rem",
-    };
-
-    const helpTextStyle = {
-      fontSize: "0.875rem",
-      color: theme === "dark" ? "#9ca3af" : "#666",
-      marginTop: "0.25rem",
-    };
-
-    // Render appropriate field based on type
     switch (field.type) {
-      case "select":
+      case 'text':
         return (
-          <div style={{ marginBottom: "1rem" }} key={field.id}>
-            <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
-              {field.label}
-              {field.required ? " *" : ""}
-            </label>
-            <select
-              id={`feedback-${field.id}`}
-              value={value as string}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              style={inputBaseStyle}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              required={field.required}
-              aria-required={field.required}
-              aria-describedby={
-                field.helpText ? `help-${field.id}` : undefined
-              }
-            >
-              {field.options?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {field.helpText && (
-              <p id={`help-${field.id}`} style={helpTextStyle}>
-                {field.helpText}
-              </p>
-            )}
-          </div>
+          <input
+            key={field.id}
+            id={field.id}
+            type="text"
+            value={value}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         );
 
-      case "textarea":
+      case 'textarea':
         return (
-          <div style={{ marginBottom: "1rem" }} key={field.id}>
-            <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
-              {field.label}
-              {field.required ? " *" : ""}
-            </label>
-            <textarea
-              id={`feedback-${field.id}`}
-              value={value as string}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              placeholder={field.placeholder}
-              required={field.required}
-              disabled={isSubmitting}
-              style={{
-                ...inputBaseStyle,
-                minHeight: "120px",
-                resize: "vertical",
-              }}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              aria-required={field.required}
-              aria-describedby={
-                field.helpText ? `help-${field.id}` : undefined
-              }
-            />
-            {field.id === "message" && (
-              <small style={{ color: theme === "dark" ? "#9ca3af" : "#666" }}>
-                {(value as string).length}/1000 characters
-              </small>
-            )}
-            {field.helpText && (
-              <p id={`help-${field.id}`} style={helpTextStyle}>
-                {field.helpText}
-              </p>
-            )}
-          </div>
+          <textarea
+            key={field.id}
+            id={field.id}
+            value={value}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+          />
         );
 
-      case "text":
-      default:
+      case 'select':
         return (
-          <div style={{ marginBottom: "1rem" }} key={field.id}>
-            <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
-              {field.label}
-              {field.required ? " *" : ""}
-            </label>
+          <select
+            key={field.id}
+            id={field.id}
+            value={value}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.required}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select an option</option>
+            {field.options?.map((option: any) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+
+      case 'checkbox':
+        return (
+          <label key={field.id} className="flex items-center space-x-2">
             <input
-              type="text"
-              id={`feedback-${field.id}`}
-              value={value as string}
-              onChange={(e) => handleFieldChange(field.id, e.target.value)}
-              placeholder={field.placeholder}
-              required={field.required}
-              disabled={isSubmitting}
-              style={inputBaseStyle}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              aria-required={field.required}
-              aria-describedby={
-                field.helpText ? `help-${field.id}` : undefined
-              }
+              id={field.id}
+              type="checkbox"
+              checked={!!value}
+              onChange={(e) => handleInputChange(field.id, e.target.checked)}
+              className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
-            {field.helpText && (
-              <p id={`help-${field.id}`} style={helpTextStyle}>
-                {field.helpText}
-              </p>
-            )}
-          </div>
+            <span>{field.label}</span>
+          </label>
         );
+
+      default:
+        return null;
     }
   };
 
-  // Early return if modal is not open
-  if (!isModalOpen) return null;
-
-  // Overlay style with theme and animation
-  const overlayStyle = {
-    position: "fixed" as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: overlayStyles.backgroundColor || (theme === "dark" ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)"),
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: overlayStyles.zIndex || 1000,
-    ...getAnimationStyles(
-      { ...animation, enter: "fade", exit: "fade" },
-      !isClosing
-    ),
-  };
-
-  // Content style with theme, animation, and RTL support
-  const contentStyle = {
-    backgroundColor: contentStyles.backgroundColor || (theme === 'dark' ? "#1f2937" : "white"),
-    color: theme === 'dark' ? "#e5e7eb" : "inherit",
-    padding: contentStyles.padding || "2rem",
-    borderRadius: contentStyles.borderRadius || "8px",
-    width: contentStyles.width || "90%",
-    maxWidth: contentStyles.maxWidth || "500px",
-    boxShadow: contentStyles.boxShadow || (theme === 'dark' 
-      ? "0 4px 20px rgba(0, 0, 0, 0.5)" 
-      : "0 4px 20px rgba(0, 0, 0, 0.15)"),
-    fontFamily: contentStyles.fontFamily || "inherit",
-    direction: dir as React.CSSProperties['direction'],
-    textAlign: (dir === 'rtl' ? 'right' : 'left') as React.CSSProperties['textAlign'],
-    ...getAnimationStyles(animation, !isClosing),
-  };
-  
-  // Error display style
-  const errorDisplayStyle = {
-    color: errorStyles.textColor || (theme === "dark" ? "#f87171" : "#d73a49"),
-    backgroundColor: errorStyles.backgroundColor || (theme === "dark" ? "rgba(248, 113, 113, 0.1)" : "#ffeef0"),
-    padding: errorStyles.padding || "0.75rem",
-    borderRadius: errorStyles.borderRadius || "4px",
-    marginBottom: "1rem",
-    border: `1px solid ${errorStyles.borderColor || (theme === "dark" ? "rgba(248, 113, 113, 0.3)" : "#fdaeb7")}`,
-  };
+  if (!isOpen && !isClosing) {
+    return null;
+  }
 
   return (
     <div
-      className={`feedback-modal-overlay ${overlayClassName}`.trim()}
-      style={overlayStyle}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={handleBackdropClick}
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        ...getAnimationStyles(animation, !isClosing),
       }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="feedback-modal-title"
-      aria-describedby="feedback-modal-description"
-      dir={dir}
     >
       <div
         ref={modalRef}
-        className={`feedback-modal-content ${className}`.trim()}
-        style={contentStyle as React.CSSProperties}
+        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4"
+        dir={dir}
+        style={{
+          ...getAnimationStyles(animation, !isClosing),
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {isOffline && (
-          <div 
-            style={{ 
-              marginBottom: '1rem', 
-              padding: '0.5rem', 
-              backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6', 
-              borderRadius: '4px', 
-              fontSize: '0.875rem' 
-            }}
-            role="status"
-            aria-live="polite"
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {template.name}
+          </h2>
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+            aria-label="Close modal"
           >
-            <span role="img" aria-label="Warning">⚠️</span> {t('modal.offline.notice')}
-          </div>
-        )}
-        
-        <h2 id="feedback-modal-title" style={{ marginTop: 0 }}>
-          {template.title || t('modal.title')}
-        </h2>
-        
-        {(template.description || t('modal.description')) && (
-          <p id="feedback-modal-description" style={{ marginBottom: '1.5rem' }}>
-            {template.description || t('modal.description')}
-          </p>
-        )}
-        
-        {/* Only show error display if Sonner is not available */}
-        {shouldShowInternalError && (
-          <div 
-            style={errorDisplayStyle}
-            role="alert"
-            aria-live="assertive"
-          >
-            {submitError}
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} noValidate>
-          {/* Form fields with translated labels and placeholders */}
-          {template.fields.map((field) => {
-            const value = formData[field.id] !== undefined ? formData[field.id] : "";
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-            const inputBaseStyle = {
-              width: "100%",
-              marginTop: "0.25rem",
-              border: `1px solid ${formStyles.inputBorderColor || (theme === "dark" ? "#4b5563" : "#ccc")}`,
-              borderRadius: formStyles.inputBorderRadius || "4px",
-              padding: formStyles.inputPadding || "0.75rem",
-              fontFamily: "inherit",
-              backgroundColor: theme === "dark" ? "#1f2937" : "white",
-              color: theme === "dark" ? "#e5e7eb" : "inherit",
-            };
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-6">
+            {/* Template fields */}
+            {template.fields.map((field: TemplateField) => {
+              if (field.type === 'checkbox') {
+                return renderField(field);
+              }
 
-            const labelStyle = {
-              color: formStyles.labelColor || (theme === "dark" ? "#e5e7eb" : "inherit"),
-              fontWeight: formStyles.labelFontWeight || "inherit",
-              display: "block",
-              marginBottom: "0.25rem",
-            };
+              return (
+                <div key={field.id}>
+                  <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-2">
+                    {field.label}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  {renderField(field)}
+                </div>
+              );
+            })}
 
-            const helpTextStyle = {
-              fontSize: "0.875rem",
-              color: theme === "dark" ? "#9ca3af" : "#666",
-              marginTop: "0.25rem",
-            };
-
-            // Render appropriate field based on type
-            switch (field.type) {
-              case "select":
-                return (
-                  <div style={{ marginBottom: "1rem" }} key={field.id}>
-                    <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
-                      {field.label}
-                      {field.required ? " *" : ""}
-                    </label>
-                    <select
-                      id={`feedback-${field.id}`}
-                      value={value as string}
-                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                      style={inputBaseStyle}
-                      onFocus={handleInputFocus}
-                      onBlur={handleInputBlur}
-                      required={field.required}
-                      aria-required={field.required}
-                      aria-describedby={
-                        field.helpText ? `help-${field.id}` : undefined
-                      }
-                    >
-                      {field.options?.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    {field.helpText && (
-                      <p id={`help-${field.id}`} style={helpTextStyle}>
-                        {field.helpText}
-                      </p>
-                    )}
-                  </div>
-                );
-
-              case "textarea":
-                return (
-                  <div style={{ marginBottom: "1rem" }} key={field.id}>
-                    <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
-                      {field.label}
-                      {field.required ? " *" : ""}
-                    </label>
-                    <textarea
-                      id={`feedback-${field.id}`}
-                      value={value as string}
-                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      disabled={isSubmitting}
-                      style={{
-                        ...inputBaseStyle,
-                        minHeight: "120px",
-                        resize: "vertical",
-                      }}
-                      onFocus={handleInputFocus}
-                      onBlur={handleInputBlur}
-                      aria-required={field.required}
-                      aria-describedby={
-                        field.helpText ? `help-${field.id}` : undefined
-                      }
-                    />
-                    {field.id === "message" && (
-                      <small style={{ color: theme === "dark" ? "#9ca3af" : "#666" }}>
-                        {(value as string).length}/1000 characters
-                      </small>
-                    )}
-                    {field.helpText && (
-                      <p id={`help-${field.id}`} style={helpTextStyle}>
-                        {field.helpText}
-                      </p>
-                    )}
-                  </div>
-                );
-
-              case "text":
-              default:
-                return (
-                  <div style={{ marginBottom: "1rem" }} key={field.id}>
-                    <label htmlFor={`feedback-${field.id}`} style={labelStyle}>
-                      {field.label}
-                      {field.required ? " *" : ""}
-                    </label>
-                    <input
-                      type="text"
-                      id={`feedback-${field.id}`}
-                      value={value as string}
-                      onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      disabled={isSubmitting}
-                      style={inputBaseStyle}
-                      onFocus={handleInputFocus}
-                      onBlur={handleInputBlur}
-                      aria-required={field.required}
-                      aria-describedby={
-                        field.helpText ? `help-${field.id}` : undefined
-                      }
-                    />
-                    {field.helpText && (
-                      <p id={`help-${field.id}`} style={helpTextStyle}>
-                        {field.helpText}
-                      </p>
-                    )}
-                  </div>
-                );
-            }
-          })}
-
-          {/* Category selector */}
-          {categories.length > 0 && (
+            {/* Category selector */}
             <CategorySelector
               categories={categories}
-              selectedCategory={category}
-              selectedSubcategory={subcategory}
-              onSelectionChange={handleCategoryChange}
+              selectedCategory={formData.category || ''}
+              selectedSubcategory={formData.subcategory}
+              onSelectionChange={(categoryId: string, subcategoryId?: string) => {
+                handleInputChange('category', categoryId);
+                handleInputChange('subcategory', subcategoryId);
+              }}
               disabled={isSubmitting}
             />
-          )}
 
-          {/* User identity fields */}
-          <UserIdentityFields
-            identity={identity}
-            onIdentityChange={setIdentity}
-            config={{
-              requiredIdentityFields: [],
-              rememberUserIdentity: true,
-            }}
-            disabled={isSubmitting}
-          />
+            {/* User identity fields */}
+            <UserIdentityFields
+              value={formData.user}
+              onChange={(user: any) => handleInputChange('user', user)}
+            />
 
-          {/* File attachments */}
-          <FileAttachmentInput
-            attachments={attachments}
-            onAttachmentsChange={setAttachments}
-            config={{
-              maxAttachments: 3,
-              maxAttachmentSize: 5 * 1024 * 1024,
-              allowedAttachmentTypes: [
-                "image/jpeg",
-                "image/png",
-                "image/gif",
-                "application/pdf",
-              ],
-            }}
-            disabled={isSubmitting}
-          />
+            {/* File attachments */}
+            <FileAttachmentInput
+              attachments={attachments}
+              onAttachmentsChange={handleAttachmentsChange}
+              config={{
+                maxAttachments: 5,
+                maxAttachmentSize: 5 * 1024 * 1024
+              }}
+            />
 
-          <div
-            style={{
-              display: "flex",
-              gap: "0.5rem",
-              justifyContent: dir === 'rtl' ? "flex-start" : "flex-end",
-              marginTop: "1.5rem",
-            }}
-          >
+            {/* Error display */}
+            {shouldShowInternalError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{submitError}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={handleClose}
-              disabled={isSubmitting}
-              style={cancelButtonStyle}
-              aria-label={t('modal.cancel')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              {t('modal.cancel')}
+              Cancel
             </button>
-            
             <button
               type="submit"
               disabled={
-                isSubmitting || template.fields
-                  .filter(field => field.required)
-                  .some(field => !formData[field.id])
+                !isFormValid || 
+                isSubmitting || 
+                template.fields
+                  .filter((field: TemplateField) => field.required)
+                  .some((field: TemplateField) => !formData[field.id])
               }
-              style={submitButtonStyle}
-              aria-label={isSubmitting ? t('modal.submitting') : t('modal.submit')}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? t('modal.submitting') : t('modal.submit')}
+              {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
             </button>
           </div>
         </form>

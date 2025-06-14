@@ -1,5 +1,5 @@
 /**
- * User identity fields component
+ * User identity fields component for feedback collection
  * @module components/UserIdentityFields
  */
 import React, { useEffect, useState } from 'react';
@@ -12,9 +12,9 @@ import { useTheme } from '../hooks/useTheme';
  */
 interface UserIdentityFieldsProps {
   /** Current user identity values */
-  identity: UserIdentity;
+  value?: UserIdentity;
   /** Function to update identity values */
-  onIdentityChange: (identity: UserIdentity) => void;
+  onChange: (identity: UserIdentity) => void;
   /** Configuration options */
   config?: Pick<FeedbackConfig, 
     'requiredIdentityFields' | 
@@ -33,8 +33,8 @@ interface UserIdentityFieldsProps {
  * @param props - Component props
  */
 export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
-  identity,
-  onIdentityChange,
+  value = {},
+  onChange,
   config = {},
   disabled = false
 }) => {
@@ -48,15 +48,16 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
     if (config.rememberUserIdentity !== false) {
       const savedIdentity = getUserIdentity();
       if (savedIdentity) {
-        onIdentityChange(savedIdentity);
+        onChange(savedIdentity);
       }
     }
-  }, [config.rememberUserIdentity, onIdentityChange]);
+  }, [config.rememberUserIdentity, onChange]);
 
   // Handle field change
-  const handleFieldChange = (field: keyof UserIdentity, value: string) => {
-    const updatedIdentity = { ...identity, [field]: value };
-    onIdentityChange(updatedIdentity);
+  const handleFieldChange = (field: keyof UserIdentity, fieldValue: string) => {
+    const currentValue = value || {};
+    const updatedIdentity = { ...currentValue, [field]: fieldValue };
+    onChange(updatedIdentity);
     
     // Save to storage if remember is enabled
     if (rememberIdentity) {
@@ -70,7 +71,7 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
     
     if (e.target.checked) {
       // Save current identity
-      saveUserIdentity(identity);
+      saveUserIdentity(value);
     }
   };
 
@@ -128,7 +129,7 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
         <input
           type="text"
           id="feedback-user-name"
-          value={identity.name || ''}
+          value={value.name || ''}
           onChange={(e) => handleFieldChange('name', e.target.value)}
           style={styles.input}
           disabled={disabled}
@@ -145,7 +146,7 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
         <input
           type="email"
           id="feedback-user-email"
-          value={identity.email || ''}
+          value={value.email || ''}
           onChange={(e) => handleFieldChange('email', e.target.value)}
           style={styles.input}
           disabled={disabled}

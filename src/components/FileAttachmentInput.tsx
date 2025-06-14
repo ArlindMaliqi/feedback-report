@@ -1,12 +1,9 @@
 /**
- * File attachment input component
+ * File attachment input component for feedback
  * @module components/FileAttachmentInput
  */
-import React, { useState, useRef } from 'react';
-import { 
-  FeedbackAttachment, 
-  FeedbackConfig 
-} from '../types';
+import React, { useCallback, useRef, useState } from 'react';
+import { FeedbackAttachment, FeedbackConfig } from '../types';
 import {
   validateAttachment,
   createAttachment,

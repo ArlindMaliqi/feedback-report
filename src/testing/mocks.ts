@@ -1,5 +1,5 @@
 /**
- * Mock implementations for testing the feedback system
+ * Mock utilities for testing feedback components
  * @module testing/mocks
  */
 import type { FeedbackConfig, Feedback, AnalyticsConfig, IssueTrackerConfig } from '../types';
@@ -137,4 +137,41 @@ export const mockLocalStorage = (initialData: Record<string, string> = {}) => {
     length: Object.keys(store).length,
     _getStore: () => ({ ...store }) // Helper for test assertions
   };
+};
+
+/**
+ * Mock fetch for successful API responses
+ */
+export const mockFetchSuccess = () => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+      status: 200,
+      statusText: 'OK'
+    } as Response)
+  );
+};
+
+/**
+ * Mock fetch for failed API responses
+ */
+export const mockFetchError = () => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: false,
+      json: () => Promise.resolve({ error: 'Server error' }),
+      status: 500,
+      statusText: 'Internal Server Error'
+    } as Response)
+  );
+};
+
+/**
+ * Mock fetch for network errors
+ */
+export const mockFetchNetworkError = () => {
+  global.fetch = jest.fn(() =>
+    Promise.reject(new Error('Network error'))
+  );
 };

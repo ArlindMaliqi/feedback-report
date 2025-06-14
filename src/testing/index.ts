@@ -128,6 +128,19 @@ export const createMockUseFeedback = (overrides: Partial<ReturnType<typeof impor
 };
 
 /**
+ * Creates a mock feedback API response
+ */
+export const createMockApiResponse = (success: boolean = true, data?: any) => {
+  // Mock implementation - options parameter removed as it was unused
+  return Promise.resolve({
+    ok: success,
+    json: () => Promise.resolve(data || { success }),
+    status: success ? 200 : 400,
+    statusText: success ? 'OK' : 'Bad Request'
+  } as Response);
+};
+
+/**
  * Setup function for React Testing Library tests
  * 
  * @param ui - The UI component to render
