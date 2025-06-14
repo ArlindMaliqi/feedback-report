@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.4.0...v1.5.0) (2025-06-14)
+
+
+### Features
+
+* **core:** Add Sonner integration and improve code quality ([ab58dd1](https://github.com/ArlindMaliqi/feedback-report/commit/ab58dd10075a155cb8621d13dce619ba4b4fd637))
+
 # [1.4.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.3.2...v1.4.0) (2025-06-14)
 
 
