@@ -1,37 +1,22 @@
+/**
+ * Hook for accessing localization context
+ * @module hooks/useLocalization
+ */
 import { useContext } from 'react';
-import { LocalizationContext } from '../components/FeedbackProvider';
+import { LocalizationContext, LocalizationContextType } from '../contexts/FeedbackContext';
 
 /**
- * Custom hook to access localization features
+ * Hook to access the localization context
  * 
- * Provides translation function, text direction, and locale information
- * from the LocalizationContext.
- * 
- * @returns Localization utilities and settings
- * 
- * @example
- * ```tsx
- * function MyComponent() {
- *   const { t, dir, locale } = useLocalization();
- *   
- *   return (
- *     <div dir={dir}>
- *       <h1>{t('welcome.title')}</h1>
- *       <p>{t('welcome.message', { name: 'User' })}</p>
- *       <span>Current locale: {locale}</span>
- *     </div>
- *   );
- * }
- * ```
+ * @returns LocalizationContextType
+ * @throws Error if used outside FeedbackProvider
  */
-export function useLocalization() {
+export const useLocalization = (): LocalizationContextType => {
   const context = useContext(LocalizationContext);
   
   if (!context) {
-    throw new Error('useLocalization must be used within a LocalizationContext Provider');
+    throw new Error('useLocalization must be used within a FeedbackProvider');
   }
   
   return context;
-}
-
-export default useLocalization;
+};

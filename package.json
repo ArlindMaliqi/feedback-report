@@ -1,9 +1,11 @@
 {
   "name": "react-feedback-report-widget",
   "version": "1.5.0",
-  "description": "A typesafe React feedback widget with shake detection, integrations, and testing utilities",
+  "description": "A comprehensive TypeScript-first React feedback widget with shake detection, powerful integrations, analytics, and professional developer experience",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "module": "dist/index.esm.js",
+  "sideEffects": false,
   "private": false,
   "publishConfig": {
     "access": "public",
@@ -12,7 +14,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "npm run clean && tsc",
@@ -31,12 +34,16 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "analyze": "npm run build && npx bundlesize",
+    "analyze:webpack": "npm run build && npx webpack-bundle-analyzer dist/stats.json",
+    "perf:audit": "npm run build && npx lighthouse-ci autorun",
+    "size-limit": "npx size-limit"
   },
   "keywords": [
-    "feedback",
     "react",
     "typescript",
+    "feedback",
     "widget",
     "shake-detection",
     "bug-report",
@@ -45,9 +52,55 @@
     "react-component",
     "analytics",
     "integrations",
+    "accessibility",
+    "a11y",
+    "dark-mode",
+    "light-mode",
+    "theme",
+    "offline-support",
+    "pwa",
     "nextjs",
     "gatsby",
-    "remix"
+    "remix",
+    "ssr",
+    "performance",
+    "bundle-optimization",
+    "tree-shaking",
+    "lazy-loading",
+    "github-issues",
+    "jira",
+    "gitlab",
+    "azure-devops",
+    "slack",
+    "teams",
+    "discord",
+    "webhooks",
+    "google-analytics",
+    "segment",
+    "mixpanel",
+    "i18n",
+    "localization",
+    "rtl",
+    "testing",
+    "storybook",
+    "jest",
+    "react-testing-library",
+    "typescript-first",
+    "enterprise",
+    "production-ready",
+    "mobile-friendly",
+    "responsive",
+    "wcag",
+    "gdpr",
+    "privacy",
+    "security",
+    "file-upload",
+    "attachments",
+    "voting",
+    "categories",
+    "customizable",
+    "developer-experience",
+    "dx"
   ],
   "author": {
     "name": "ArlindMaliqi",
@@ -103,5 +156,56 @@
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=7.0.0"
+  },
+  "bundlesize": [
+    {
+      "path": "./dist/index.js",
+      "maxSize": "25 kB",
+      "compression": "gzip"
+    },
+    {
+      "path": "./dist/components/OptimizedFeedbackWidget.js",
+      "maxSize": "15 kB",
+      "compression": "gzip"
+    }
+  ],
+  "size-limit": [
+    {
+      "name": "Core bundle",
+      "path": "dist/index.js",
+      "limit": "25 KB"
+    },
+    {
+      "name": "Optimized widget",
+      "path": "dist/components/OptimizedFeedbackWidget.js",
+      "limit": "15 KB"
+    }
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./testing": {
+      "import": "./dist/testing/index.esm.js",
+      "require": "./dist/testing/index.js",
+      "types": "./dist/testing/index.d.ts"
+    },
+    "./storybook": {
+      "import": "./dist/storybook/index.esm.js",
+      "require": "./dist/storybook/index.js",
+      "types": "./dist/storybook/index.d.ts"
+    },
+    "./examples": {
+      "import": "./dist/examples/index.esm.js",
+      "require": "./dist/examples/index.js",
+      "types": "./dist/examples/index.d.ts"
+    },
+    "./optimized": {
+      "import": "./dist/components/OptimizedFeedbackWidget.esm.js",
+      "require": "./dist/components/OptimizedFeedbackWidget.js",
+      "types": "./dist/components/OptimizedFeedbackWidget.d.ts"
+    }
   }
 }

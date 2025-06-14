@@ -7,7 +7,7 @@ export interface Feedback {
   /** The feedback message content */
   message: string;
   /** When the feedback was submitted */
-  timestamp: Date;
+  timestamp: number; // Changed from Date to number
   /** Category of the feedback */
   type?: 'bug' | 'feature' | 'improvement' | 'other';
   /** User's browser user agent string (if collection is enabled) */
@@ -33,13 +33,15 @@ export interface Feedback {
 }
 
 /**
- * Context type for the feedback system
+ * Context type for feedback functionality
  */
 export interface FeedbackContextType {
-  /** Whether the feedback modal is currently open */
-  isModalOpen: boolean;
   /** Array of all submitted feedback entries */
   feedbacks: Feedback[];
+  /** Whether the feedback modal is currently open */
+  isOpen: boolean;
+  /** Whether the feedback modal is currently open */
+  isModalOpen: boolean;
   /** Function to open the feedback modal */
   openModal: () => void;
   /** Function to close the feedback modal */
@@ -588,4 +590,13 @@ export interface FeedbackSubcategory {
   name: string;
   /** Optional description of the subcategory */
   description?: string;
+}
+
+/**
+ * Localization context type
+ */
+export interface LocalizationContextType {
+  t: (key: string, params?: Record<string, string | number>) => string;
+  dir: 'ltr' | 'rtl';
+  locale: string;
 }

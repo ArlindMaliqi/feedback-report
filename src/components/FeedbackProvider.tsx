@@ -1,3 +1,7 @@
+/**
+ * Core FeedbackProvider component with comprehensive feedback management
+ * @module components/FeedbackProvider
+ */
 import React, { createContext, useState, ReactNode, useCallback, useEffect, useMemo } from "react";
 import type { 
   FeedbackContextType, 
@@ -20,18 +24,21 @@ import { createTranslator, getDirection } from "../utils/localization";
 import { processIntegrations, processVoteIntegrations } from "../utils/integrations";
 
 /**
- * Context for feedback system functionality
+ * Context for feedback system functionality with type safety
  */
 export const FeedbackContext = createContext<FeedbackContextType | undefined>(
   undefined
 );
 
 /**
- * Context for localization
+ * Context for localization with RTL support and translations
  */
 export const LocalizationContext = createContext<{
+  /** Translation function that returns localized strings */
   t: (key: string, params?: Record<string, string | number>) => string;
+  /** Text direction for RTL language support */
   dir: 'ltr' | 'rtl';
+  /** Current locale identifier */
   locale: string;
 }>({
   t: (key) => key,
@@ -40,38 +47,69 @@ export const LocalizationContext = createContext<{
 });
 
 /**
- * Props for the FeedbackProvider component
+ * Configuration properties for the FeedbackProvider component
+ * @interface FeedbackProviderProps
  */
 interface FeedbackProviderProps {
   /** Child components that will have access to the feedback context */
   children: ReactNode;
   /** Configuration options for the feedback system */
   config?: FeedbackConfig;
-  /** Test-only props - should not be used in production code */
+  /** Test-only properties for mocking behavior in test environments */
   _testProps?: {
+    /** Initial feedback data for testing */
     initialFeedback?: Feedback[];
+    /** Whether the modal should be open initially */
     modalOpen?: boolean;
+    /** Disable network requests for testing */
+    disableNetworkRequests?: boolean;
   };
 }
 
 /**
- * Provider component that manages the feedback system state and functionality
+ * Core provider component that manages feedback system state and functionality
  *
- * This component should wrap your entire application or the part of your app
- * where you want to enable feedback functionality. It provides the context
- * for all feedback-related components and hooks.
+ * This component provides comprehensive feedback management including:
+ * - Feedback submission and validation
+ * - Offline support with automatic synchronization
+ * - Integration with external services (analytics, issue trackers, etc.)
+ * - Internationalization and localization
+ * - Vote management for community feedback
+ * - Real-time connectivity monitoring
  *
- * @param props - Component props
- * @param props.children - Child components
- * @param props.config - Feedback system configuration
- * @param props._testProps - Test-only props (not for production use)
+ * @param props - Component configuration properties
+ * @returns Provider component that wraps the application with feedback context
+ * 
+ * @example
+ * Basic usage:
+ * ```tsx
+ * <FeedbackProvider config={{ apiEndpoint: '/api/feedback' }}>
+ *   <App />
+ * </FeedbackProvider>
+ * ```
+ * 
+ * @example
+ * Advanced configuration:
+ * ```tsx
+ * <FeedbackProvider 
+ *   config={{
+ *     apiEndpoint: '/api/feedback',
+ *     enableOfflineSupport: true,
+ *     enableVoting: true,
+ *     categories: customCategories,
+ *     localization: { locale: 'es', rtl: false }
+ *   }}
+ * >
+ *   <App />
+ * </FeedbackProvider>
+ * ```
  */
 export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
   children,
   config = {},
   _testProps
 }) => {
-  // Initialize state with test values if provided
+  // Core state management
   const [isModalOpen, setModalOpen] = useState(_testProps?.modalOpen || false);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>(_testProps?.initialFeedback || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,7 +119,9 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     config.categories || defaultCategories
   );
 
-  // Load offline feedback on mount if enabled
+  /**
+   * Effect to handle offline support initialization and connectivity monitoring
+   */
   useEffect(() => {
     if (config.enableOfflineSupport) {
       // Load any pending feedback from storage
@@ -110,30 +150,46 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     }
   }, [config.enableOfflineSupport, config.apiEndpoint]);
 
-  // Modal management
+  /**
+   * Opens the feedback modal and clears any existing errors
+   */
   const openModal = useCallback(() => {
     setModalOpen(true);
     setError(null);
   }, []);
 
+  /**
+   * Closes the feedback modal and clears any existing errors
+   */
   const closeModal = useCallback(() => {
     setModalOpen(false);
     setError(null);
   }, []);
 
-  // Set up localization
+  // Localization setup with memoized values for performance
   const localizationConfig: LocalizationConfig = config.localization || {};
   const locale = localizationConfig.locale || 'en';
+  
+  /**
+   * Memoized translation function to prevent unnecessary re-renders
+   */
   const t = useMemo(() => 
     createTranslator(localizationConfig), 
     [localizationConfig]
   );
+  
+  /**
+   * Memoized text direction based on locale for RTL support
+   */
   const dir = useMemo(() => 
-    getDirection(localizationConfig), 
-    [localizationConfig]
+    getDirection(locale), 
+    [locale]
   );
 
-  // Sync offline feedback when connection is restored
+  /**
+   * Synchronizes offline feedback when connection is restored
+   * @returns Promise that resolves when synchronization is complete
+   */
   const syncOfflineFeedback = useCallback(async (): Promise<void> => {
     if (!config.apiEndpoint || !config.enableOfflineSupport || isOffline) {
       return;
@@ -206,124 +262,80 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     showSuccess(t('notification.syncComplete'));
   }, [config, feedbacks, isOffline, t]);
 
-  // Submit new feedback
+  /**
+   * Submits new feedback with validation, API integration, and error handling
+   * @param message - The feedback message content
+   * @param type - The type of feedback (bug, feature, improvement, other)
+   * @param additionalData - Additional metadata to include with the feedback
+   * @returns Promise that resolves when submission is complete
+   */
   const submitFeedback = useCallback(
     async (
       message: string,
       type: Feedback["type"] = "other",
       additionalData: Record<string, any> = {}
     ): Promise<void> => {
-      const validation = validateFeedback(message);
-      if (!validation.isValid) {
-        setError(validation.error || "Invalid feedback");
-        showError(t('validation.required'));
+      if (!message.trim()) {
+        showError(t('validation.messageRequired'));
         return;
       }
 
       setIsSubmitting(true);
-      setError(null);
-
-      // Define feedback variable with proper initialization to fix TS2454 error
-      const feedback: Feedback = {
-        id: generateId(),
-        message: message.trim(),
-        timestamp: new Date(),
-        type,
-        ...(config.collectUserAgent && { userAgent: navigator.userAgent }),
-        ...(config.collectUrl && { url: window.location.href }),
-        // Include additional data from the template and attachments
-        ...additionalData,
-        // Set initial vote count if voting is enabled
-        ...(config.enableVoting && { votes: 0, voters: [] }),
-        // For expanded categorization
-        ...(config.useExpandedCategories && additionalData.category && {
-          category: additionalData.category,
-          subcategory: additionalData.subcategory
-        })
-      };
 
       try {
-        // Add to local state immediately for optimistic UI
-        setFeedbacks((prev) => [feedback, ...prev]);
+        const newFeedback: Feedback = {
+          id: generateId(),
+          message: message.trim(),
+          type,
+          timestamp: Date.now(),
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+          ...additionalData
+        };
 
-        // If offline and offline support is enabled, store locally
-        if (isOffline && config.enableOfflineSupport) {
-          const feedbackWithStatus = { 
-            ...feedback, 
-            submissionStatus: 'pending' as const 
-          };
-          saveFeedbackOffline(feedbackWithStatus);
-          showInfo(t('notification.offline'));
-          closeModal();
-          setIsSubmitting(false);
+        // Validate feedback before submission
+        const validation = validateFeedback(newFeedback);
+        if (!validation.isValid) {
+          showError(validation.errors?.join(', ') || validation.error || 'Validation failed');
           return;
         }
 
-        // Submit to API if endpoint is configured and online
-        if (config.apiEndpoint) {
+        // Submit to API if not disabled in tests
+        if (!_testProps?.disableNetworkRequests && config.apiEndpoint) {
           const response = await fetch(config.apiEndpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(feedback),
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newFeedback)
           });
 
-          const result = await handleApiResponse(response);
-          if (!result.success) {
-            // Store offline if API call failed and offline support is enabled
-            if (config.enableOfflineSupport) {
-              const feedbackWithStatus = { 
-                ...feedback, 
-                submissionStatus: 'pending' as const 
-              };
-              saveFeedbackOffline(feedbackWithStatus);
-              showInfo(t('notification.offline'));
-            } else {
-              // Remove from local state if API call failed and no offline support
-              setFeedbacks((prev) => prev.filter((f) => f.id !== feedback.id));
-              setError(result.error || "Failed to submit feedback");
-              showError(t('notification.error', { message: result.error || 'Unknown error' }));
-              return;
-            }
-          } else {
-            // Process integrations for successful submissions
-            await processIntegrations(feedback, config);
-            showSuccess(t('notification.success'));
-          }
-        } else {
-          // If no API endpoint, process integrations directly
-          await processIntegrations(feedback, config);
-          showSuccess(t('notification.success'));
+          await handleApiResponse(response);
         }
 
-        // Success - close modal
+        // Update local state
+        setFeedbacks(prev => [newFeedback, ...prev]);
+
+        // Process integrations if configured
+        if (config.analytics || config.issueTracker || config.webhooks || config.notifications) {
+          await processIntegrations(newFeedback, config);
+        }
+
+        showSuccess(t('notification.success'));
         closeModal();
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
-        setError(errorMessage);
-        showError(t('notification.error', { message: errorMessage }));
-        
-        // Store offline if error and offline support is enabled
-        if (config.enableOfflineSupport) {
-          const feedbackWithStatus = { 
-            ...feedback, 
-            submissionStatus: 'pending' as const 
-          };
-          saveFeedbackOffline(feedbackWithStatus);
-          closeModal();
-        } else {
-          // Remove from local state on error if no offline support
-          setFeedbacks((prev) => prev.filter((f) => f.id !== feedback.id));
-        }
+        showError(t('notification.error'));
+        console.error('Error submitting feedback:', err);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [config, closeModal, isOffline, t]
+    [config, closeModal, isOffline, t, _testProps]
   );
 
-  // Vote on existing feedback
+  /**
+   * Handles voting on existing feedback with duplicate vote prevention
+   * @param id - The ID of the feedback to vote on
+   * @returns Promise that resolves when vote is processed
+   */
   const voteFeedback = useCallback(
     async (id: string): Promise<void> => {
       if (!config.enableVoting) return;
@@ -393,8 +405,6 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
           const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
           showError(t('notification.error', { message: errorMessage }));
           console.error('Error voting for feedback:', err);
-          // Leave the vote in place even if API call fails
-          // The vote will be in local state and can be synced later
         }
       } else if (isOffline) {
         showInfo(t('notification.offline'));
@@ -403,8 +413,39 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     [config, isOffline, feedbacks, t]
   );
 
-  // Memoize context values for better performance
+  /**
+   * Deletes feedback from both local state and server
+   * @param feedbackId - The ID of the feedback to delete
+   * @returns Promise that resolves when deletion is complete
+   */
+  const deleteFeedback = useCallback(
+    async (feedbackId: string): Promise<void> => {
+      try {
+        if (config.apiEndpoint) {
+          const response = await fetch(`${config.apiEndpoint}/${feedbackId}`, {
+            method: 'DELETE'
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete feedback');
+          }
+        }
+
+        setFeedbacks((prev) => prev.filter((f) => f.id !== feedbackId));
+        showSuccess(t('notification.deleted'));
+      } catch (error) {
+        showError(t('notification.deleteError'));
+        console.error('Error deleting feedback:', error);
+      }
+    },
+    [config.apiEndpoint, t]
+  );
+
+  /**
+   * Memoized feedback context value to prevent unnecessary re-renders
+   */
   const feedbackContextValue = useMemo<FeedbackContextType>(() => ({
+    isOpen: isModalOpen,
     isModalOpen,
     feedbacks,
     openModal,
@@ -416,6 +457,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     syncOfflineFeedback,
     voteFeedback,
     categories,
+    config
   }), [
     isModalOpen, 
     feedbacks, 
@@ -427,14 +469,18 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     isOffline, 
     syncOfflineFeedback, 
     voteFeedback, 
-    categories
+    categories,
+    config
   ]);
 
+  /**
+   * Memoized localization context value with RTL support
+   */
   const localizationContextValue = useMemo(() => ({
     t,
+    locale: localizationConfig?.locale || 'en',
     dir,
-    locale
-  }), [t, dir, locale]);
+  }), [t, localizationConfig, dir]);
 
   return (
     <LocalizationContext.Provider value={localizationContextValue}>

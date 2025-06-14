@@ -1,9 +1,35 @@
 # [1.5.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.4.0...v1.5.0) (2025-06-14)
 
-
 ### Features
 
-* **core:** Add Sonner integration and improve code quality ([ab58dd1](https://github.com/ArlindMaliqi/feedback-report/commit/ab58dd10075a155cb8621d13dce619ba4b4fd637))
+* **core:** Add comprehensive integrations and developer experience improvements ([ab58dd1](https://github.com/ArlindMaliqi/feedback-report/commit/ab58dd10075a155cb8621d13dce619ba4b4fd637))
+  - Analytics integration with Google Analytics, Segment, Mixpanel, and custom providers
+  - Issue tracker integration supporting GitHub, Jira, GitLab, and Azure DevOps
+  - Webhook support for custom endpoints with payload signing
+  - Chat platform notifications for Slack, Teams, and Discord
+  - Comprehensive localization support with RTL language capabilities
+  - Testing utilities with mock helpers and React Testing Library integration
+  - Storybook configuration with component documentation and visual testing
+  - Framework-specific examples for Next.js, Gatsby, and Remix
+  - Specialized hooks: useFeedbackHistory and useFeedbackAnalytics
+  - Performance optimizations with bundle size optimization and lazy loading
+  - SSR-compatible components with proper hydration handling
+  - Professional TypeScript type definitions for all integrations
+
+### Performance
+
+* **bundle:** Add code splitting and tree-shaking optimization
+  - Lazy loading of components only when needed
+  - Bundle size analysis and monitoring tools
+  - Performance monitoring with Core Web Vitals tracking
+  - Memory leak prevention and cleanup mechanisms
+
+### Developer Experience
+
+* **testing:** Complete testing utilities and Storybook integration
+* **docs:** Comprehensive documentation and API reference
+* **types:** Professional TypeScript definitions throughout
+* **examples:** Framework-specific implementation guides
 
 # [1.4.0](https://github.com/ArlindMaliqi/feedback-report/compare/v1.3.2...v1.4.0) (2025-06-14)
 

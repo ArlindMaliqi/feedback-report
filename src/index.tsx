@@ -5,212 +5,78 @@
  * featuring shake detection, customizable UI components, and TypeScript support.
  *
  * @author ArlindMaliqi
- * @version 1.4.0
+ * @version 1.5.0
  * @license MIT
  */
 
-// Main exports for the feedback-report package
+// Core component exports
 export { FeedbackProvider } from "./components/FeedbackProvider";
 export { FeedbackButton } from "./components/FeedbackButton";
 export { FeedbackModal } from "./components/FeedbackModal";
-export { ShakeDetector } from "./components/ShakeDetector";
-export { ThemeProvider } from "./contexts/ThemeContext";
-export { FileAttachmentInput } from "./components/FileAttachmentInput";
-export { UserIdentityFields } from "./components/UserIdentityFields";
-export { CategorySelector } from "./components/CategorySelector";
-export { OfflineIndicator } from "./components/OfflineIndicator";
-export { FeedbackVoteButton } from "./components/FeedbackVoteButton";
-export { FeedbackListItem } from "./components/FeedbackListItem";
 
-// Export localization
-export { 
-  createTranslator, 
-  getDirection, 
-  DEFAULT_MESSAGES,
-  TRANSLATIONS,
-  ALL_MESSAGES
-} from "./utils/localization";
-
-// Export integrations
-export { 
-  processIntegrations, 
-  processVoteIntegrations,
-  trackFeedbackEvent,
-  trackFeedbackSubmission,
-  trackFeedbackVote,
-  ANALYTICS_EVENTS
-} from "./utils/integrations";
-export { createIssueFromFeedback } from "./utils/integrations/issueTracker";
-export { sendToWebhook, sendToWebhooks } from "./utils/integrations/webhooks";
-export { sendNotification } from "./utils/integrations/notifications";
-
-// Hooks
+// Context exports (create placeholder if missing)
 export { useFeedback } from "./hooks/useFeedback";
-export { useShakeDetection } from "./hooks/useShakeDetection";
-export { useTheme } from "./hooks/useTheme";
 export { useLocalization } from "./hooks/useLocalization";
+export { ThemeProvider } from "./contexts/ThemeContext";
 
-// Extended hooks
+// Hook exports
 export { useFeedbackHistory } from "./hooks/useFeedbackHistory";
 export { useFeedbackAnalytics } from "./hooks/useFeedbackAnalytics";
 
-// Types
+// Type exports
 export type {
   Feedback,
-  FeedbackContextType,
   FeedbackConfig,
-  ApiResponse,
-  FeedbackModalStyles,
-  FeedbackModalOverlayStyles,
-  FeedbackModalContentStyles,
-  FeedbackModalFormStyles,
-  FeedbackModalButtonStyles,
-  FeedbackModalErrorStyles,
+  FeedbackContextType,
+  FeedbackCategory,
+  FeedbackAttachment,
+  LocalizationConfig,
   ThemePreference,
-  ThemeContextType,
   AnimationConfig,
   FeedbackTemplate,
-  TemplateField,
-  TemplateConfig,
-  FeedbackAttachment,
-  UserIdentity,
-  FeedbackCategory,
-  FeedbackSubcategory,
+  FeedbackModalStyles,
+  IssueTrackerConfig,
+  AnyIssueTrackerConfig,
+  AnalyticsConfig,
+  WebhookConfig,
+  NotificationConfig,
+  IssueCreationResponse
 } from "./types";
 
-// Utilities
-export {
-  formatTimestamp,
-  handleApiResponse,
-  generateId,
-  validateFeedback,
-} from "./utils";
-export { getAnimationStyles, generateKeyframes } from "./utils/animations";
+// Utility exports
 export { 
-  getTemplateById, 
-  getAllTemplates,
-  defaultTemplate,
-  bugReportTemplate,
-  featureRequestTemplate,
-  generalTemplate,
-} from "./utils/templates";
-export {
-  validateAttachment,
-  createAttachment,
-  formatFileSize,
-  captureScreenshot,
-  DEFAULT_ALLOWED_TYPES,
-  DEFAULT_MAX_SIZE,
-} from "./utils/attachmentUtils";
-export {
-  saveFeedbackOffline,
-  getFeedbackFromStorage,
-  isOffline,
-  registerConnectivityListeners,
-} from "./utils/offlineStorage";
-export {
-  defaultCategories,
-  getCategoryById,
-  getSubcategoryById,
-  mapTypeToCategory,
-  getCategoryDisplayName,
-} from "./utils/categories";
-export {
-  showError,
-  showSuccess,
-  showInfo,
-  isSonnerAvailable
-} from "./utils/notifications";
+  generateId, 
+  validateFeedback, 
+  handleApiResponse
+} from "./utils";
 
-// Testing utilities
-import * as TestingUtils from './testing';
-export { TestingUtils };
+// Tree-shakeable exports (conditionally included based on usage)
+export { FEATURE_FLAGS, isFeatureEnabled, FeatureLoader, IntegrationLoaders } from "./utils/bundleOptimization";
 
-// Examples
-import * as NextJsExample from './examples/nextjs/FeedbackComponent';
-import * as GatsbyExample from './examples/gatsby/FeedbackComponent';
-import * as RemixExample from './examples/remix/FeedbackComponent';
+// Performance-optimized components (tree-shakeable)
+export { OptimizedFeedbackWidget } from "./components/OptimizedFeedbackWidget";
+export { OptimizedFeedbackProvider } from "./components/OptimizedFeedbackProvider";
+export { SSRSafeComponent } from "./core/SSRSafeComponent";
 
-export const Examples = {
-  NextJs: NextJsExample,
-  Gatsby: GatsbyExample,
-  Remix: RemixExample
-};
+// Performance utilities (tree-shakeable)
+export { 
+  PerformanceMonitor, 
+  usePerformanceMonitor, 
+  withPerformanceMonitoring 
+} from "./utils/performance";
 
-// Default component setup for easy integration
-import React from "react";
-import { FeedbackProvider } from "./components/FeedbackProvider";
-import { FeedbackButton } from "./components/FeedbackButton";
-import { FeedbackModal } from "./components/FeedbackModal";
-import { ShakeDetector } from "./components/ShakeDetector";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { OfflineIndicator } from "./components/OfflineIndicator";
-import type { 
-  FeedbackConfig, 
-  FeedbackModalStyles, 
-  ThemePreference,
-  AnimationConfig,
-  FeedbackTemplate
-} from "./types";
+// Bundle optimization utilities (tree-shakeable)
+export { 
+  conditionalImport,
+  getBundleSizeEstimates, 
+  detectRuntimeCapabilities
+} from "./utils/bundleOptimization";
 
-/**
- * Props for the FeedbackWidget component
- */
-interface FeedbackWidgetProps {
-  /** Configuration options for the feedback system */
-  config?: FeedbackConfig;
-  /** Whether to show the floating feedback button (default: true) */
-  showButton?: boolean;
-  /** Whether to enable shake detection (default: true) */
-  enableShakeDetection?: boolean;
-  /** Props to pass to the FeedbackButton component */
-  buttonProps?: React.ComponentProps<typeof FeedbackButton>;
-  /** Custom styling options for the modal */
-  modalStyles?: FeedbackModalStyles;
-  /** Initial theme preference */
-  theme?: ThemePreference;
-  /** Animation configuration for the modal */
-  animation?: AnimationConfig;
-  /** Template to use for feedback (default: 'default') */
-  template?: FeedbackTemplate;
-  /** Whether to show offline indicator (default: true when offline support enabled) */
-  showOfflineIndicator?: boolean;
-}
+// Lazy components for advanced use cases (tree-shakeable)
+export * from "./core/lazyComponents";
 
-/**
- * All-in-one feedback widget component for easy integration
- *
- * This component combines all the feedback system components into a single,
- * easy-to-use widget. It's the recommended way to add feedback functionality
- * to your application with minimal setup.
- *
- * @param props - Widget configuration props
- */
-export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
-  config = {},
-  showButton = true,
-  enableShakeDetection = true,
-  buttonProps = {},
-  modalStyles = {},
-  theme = 'system',
-  animation = { enter: 'fade', exit: 'fade', duration: 300 },
-  template = 'default',
-  showOfflineIndicator = config.enableOfflineSupport,
-}) => {
-  return (
-    <ThemeProvider initialTheme={theme}>
-      <FeedbackProvider config={{ ...config, theme }}>
-        {enableShakeDetection && <ShakeDetector />}
-        {showButton && <FeedbackButton {...buttonProps} />}
-        {showOfflineIndicator && <OfflineIndicator />}
-        <FeedbackModal 
-          styles={modalStyles} 
-          animation={animation}
-          templateId={template}
-        />
-      </FeedbackProvider>
-    </ThemeProvider>
-  );
-};
+// Default optimized widget for most use cases
+export { OptimizedFeedbackWidget as default } from "./components/OptimizedFeedbackWidget";
 
-export default FeedbackWidget;
+// Legacy export for backward compatibility
+export { OptimizedFeedbackWidget as FeedbackWidget } from "./components/OptimizedFeedbackWidget";

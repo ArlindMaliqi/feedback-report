@@ -1,91 +1,54 @@
+/**
+ * Default feedback categories and utilities
+ * @module utils/categories
+ */
 import type { FeedbackCategory } from '../types';
 
 /**
- * Default feedback categories with subcategories
+ * Default feedback categories
  */
 export const defaultCategories: FeedbackCategory[] = [
   {
     id: 'bug',
     name: 'Bug Report',
-    description: 'Report an issue or unexpected behavior',
+    description: 'Something is not working correctly',
     icon: '🐛',
-    color: '#e53e3e',
+    color: '#ff4444',
     subcategories: [
-      { id: 'crash', name: 'App Crash' },
-      { id: 'visual', name: 'Visual Glitch' },
-      { id: 'performance', name: 'Performance Issue' },
-      { id: 'functionality', name: 'Broken Functionality' },
-      { id: 'typo', name: 'Text/Content Error' },
-      { id: 'other-bug', name: 'Other Bug' }
+      { id: 'ui', name: 'User Interface', description: 'Visual or layout issues' },
+      { id: 'performance', name: 'Performance', description: 'Slow loading or responsiveness' },
+      { id: 'functionality', name: 'Functionality', description: 'Feature not working as expected' }
     ]
   },
   {
     id: 'feature',
     name: 'Feature Request',
-    description: 'Suggest a new feature or enhancement',
-    icon: '✨',
-    color: '#38a169',
+    description: 'Suggest a new feature or improvement',
+    icon: '💡',
+    color: '#4CAF50',
     subcategories: [
-      { id: 'new-feature', name: 'New Feature' },
-      { id: 'enhancement', name: 'Enhancement to Existing Feature' },
-      { id: 'integration', name: 'Integration Request' },
-      { id: 'workflow', name: 'Workflow Improvement' },
-      { id: 'other-feature', name: 'Other Suggestion' }
+      { id: 'enhancement', name: 'Enhancement', description: 'Improve existing functionality' },
+      { id: 'new-feature', name: 'New Feature', description: 'Request entirely new functionality' }
     ]
   },
   {
-    id: 'usability',
-    name: 'Usability',
-    description: 'Feedback about user experience and ease of use',
-    icon: '👆',
-    color: '#3182ce',
-    subcategories: [
-      { id: 'confusion', name: 'Confusing Interface' },
-      { id: 'difficulty', name: 'Difficult to Use' },
-      { id: 'accessibility', name: 'Accessibility Issue' },
-      { id: 'navigation', name: 'Navigation Problem' },
-      { id: 'other-usability', name: 'Other Usability Issue' }
-    ]
-  },
-  {
-    id: 'content',
-    name: 'Content',
-    description: 'Feedback about the text, images, or other content',
-    icon: '📝',
-    color: '#805ad5',
-    subcategories: [
-      { id: 'inaccurate', name: 'Inaccurate Information' },
-      { id: 'outdated', name: 'Outdated Content' },
-      { id: 'incomplete', name: 'Incomplete Information' },
-      { id: 'inappropriate', name: 'Inappropriate Content' },
-      { id: 'other-content', name: 'Other Content Issue' }
-    ]
-  },
-  {
-    id: 'performance',
-    name: 'Performance',
-    description: 'Feedback about speed and resource usage',
+    id: 'improvement',
+    name: 'Improvement',
+    description: 'Suggest ways to make things better',
     icon: '⚡',
-    color: '#dd6b20',
+    color: '#2196F3',
     subcategories: [
-      { id: 'slowness', name: 'Slow Performance' },
-      { id: 'memory', name: 'High Memory Usage' },
-      { id: 'battery', name: 'Battery Drain' },
-      { id: 'network', name: 'Network Usage Issue' },
-      { id: 'other-performance', name: 'Other Performance Issue' }
+      { id: 'usability', name: 'Usability', description: 'Make it easier to use' },
+      { id: 'design', name: 'Design', description: 'Visual or aesthetic improvements' }
     ]
   },
   {
     id: 'other',
     name: 'Other',
-    description: 'Any other feedback that doesn\'t fit elsewhere',
+    description: 'General feedback or questions',
     icon: '💬',
-    color: '#718096',
-    subcategories: [
-      { id: 'praise', name: 'Praise' },
-      { id: 'question', name: 'Question' },
-      { id: 'other-feedback', name: 'Other Feedback' }
-    ]
+    color: '#9E9E9E',
+    subcategories: []
   }
 ];
 

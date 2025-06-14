@@ -78,26 +78,17 @@ export const TestWrapper: React.FC<TestWrapperProps> = ({
 };
 
 /**
- * Creates a mock feedback item for testing
- * 
- * @param overrides - Properties to override in the default mock
- * @returns A mock feedback item
- * 
- * @example
- * ```tsx
- * const mockFeedback = createMockFeedback({ 
- *   message: 'Custom message',
- *   type: 'bug'
- * });
- * ```
+ * Creates a mock feedback object for testing
  */
 export const createMockFeedback = (overrides: Partial<Feedback> = {}): Feedback => {
   return {
-    id: `mock-${Date.now()}`,
-    message: 'This is a mock feedback message for testing',
-    timestamp: new Date(),
-    type: 'other',
-    ...overrides
+    id: 'test-feedback-1',
+    message: 'This is a test feedback message',
+    type: 'bug',
+    timestamp: Date.now(), // Changed from new Date() to Date.now()
+    url: 'https://example.com/test-page',
+    userAgent: 'Mozilla/5.0 (Test Browser)',
+    ...overrides,
   };
 };
 

@@ -1,3 +1,7 @@
+/**
+ * File attachment input component
+ * @module components/FileAttachmentInput
+ */
 import React, { useState, useRef } from 'react';
 import { 
   FeedbackAttachment, 

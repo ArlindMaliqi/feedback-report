@@ -1,13 +1,13 @@
-import React from 'react';
+/**
+ * Offline indicator component
+ * @module components/OfflineIndicator
+ */
+import React, { useState, useEffect } from 'react';
 import { useFeedback } from '../hooks/useFeedback';
 import { useTheme } from '../hooks/useTheme';
 
-/**
- * Props for the OfflineIndicator component
- */
-interface OfflineIndicatorProps {
-  /** Position of the indicator on screen */
-  position?: "top" | "bottom";
+export interface OfflineIndicatorProps {
+  showWhenOnline?: boolean;
 }
 
 /**
@@ -17,16 +17,30 @@ interface OfflineIndicatorProps {
  * synchronization of pending feedback when back online.
  * 
  * @param props - Component props
- * @param props.position - Where to position the indicator
+ * @param props.showWhenOnline - Whether to show the indicator when online
  */
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
-  position = "top"
+  showWhenOnline = false
 }) => {
   const { isOffline, syncOfflineFeedback } = useFeedback();
   const { theme } = useTheme();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Don't render anything if online
-  if (!isOffline) {
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Don't render anything if online and not explicitly told to show when online
+  if (isOnline && !showWhenOnline) {
     return null;
   }
 
@@ -36,10 +50,9 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
       position: 'fixed' as const,
       left: '0',
       right: '0',
-      [position]: '0',
+      top: '0',
       backgroundColor: theme === 'dark' ? '#1f2937' : '#f8f9fa',
-      borderBottom: position === 'top' ? `1px solid ${theme === 'dark' ? '#4b5563' : '#e2e8f0'}` : 'none',
-      borderTop: position === 'bottom' ? `1px solid ${theme === 'dark' ? '#4b5563' : '#e2e8f0'}` : 'none',
+      borderBottom: `1px solid ${theme === 'dark' ? '#4b5563' : '#e2e8f0'}`,
       padding: '0.5rem 1rem',
       zIndex: 998,
       display: 'flex',
@@ -66,15 +79,17 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   return (
     <div style={styles.container} role="status">
       <span style={styles.icon} aria-hidden="true">⚠️</span>
-      <span>You are currently offline. Feedback will be saved locally.</span>
-      <button 
-        style={styles.syncButton}
-        onClick={syncOfflineFeedback}
-        disabled={isOffline}
-        aria-label="Sync feedback when online"
-      >
-        Sync When Online
-      </button>
+      <span>{isOnline ? 'You are online.' : 'You are currently offline. Feedback will be saved locally.'}</span>
+      {!isOnline && 
+        <button 
+          style={styles.syncButton}
+          onClick={syncOfflineFeedback}
+          disabled={isOffline}
+          aria-label="Sync feedback when online"
+        >
+          Sync When Online
+        </button>
+      }
     </div>
   );
 };

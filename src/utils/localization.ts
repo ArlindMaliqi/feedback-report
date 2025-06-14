@@ -149,11 +149,12 @@ export const createTranslator = (config: LocalizationConfig = {}): ((key: string
 };
 
 /**
- * Gets a direction (ltr or rtl) based on the configuration
- * 
- * @param config - Localization configuration
+ * Gets the text direction for a given locale
+ * @param locale - The locale string
  * @returns Text direction ('ltr' or 'rtl')
  */
-export const getDirection = (config: LocalizationConfig = {}): 'ltr' | 'rtl' => {
-  return config.isRtl ? 'rtl' : 'ltr';
+export const getDirection = (locale: string): 'ltr' | 'rtl' => {
+  const rtlLocales = ['ar', 'he', 'fa', 'ur', 'yi', 'ji', 'iw', 'in', 'ku', 'ps', 'sd'];
+  const languageCode = locale.split('-')[0].toLowerCase();
+  return rtlLocales.includes(languageCode) ? 'rtl' : 'ltr';
 };

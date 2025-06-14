@@ -1,10 +1,11 @@
+/**
+ * Theme toggle button component
+ * @module components/ThemeToggleButton
+ */
 import React from "react";
 import { useTheme } from "../hooks/useTheme";
 
-/**
- * Props for the ThemeToggleButton component
- */
-interface ThemeToggleButtonProps {
+export interface ThemeToggleButtonProps {
   /** Position of the button on screen */
   position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   /** Size of the button in pixels */
@@ -13,6 +14,8 @@ interface ThemeToggleButtonProps {
   lightIcon?: string;
   /** Dark theme icon (emoji or text) */
   darkIcon?: string;
+  currentTheme?: "light" | "dark" | "system";
+  onThemeChange?: (theme: "light" | "dark" | "system") => void;
 }
 
 /**
@@ -29,22 +32,27 @@ export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = ({
   size = 50,
   lightIcon = "☀️",
   darkIcon = "🌙",
+  currentTheme = "system",
+  onThemeChange,
 }) => {
   const { theme, setTheme } = useTheme();
 
   // Create toggle function using setTheme
   const handleToggle = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    const nextTheme = currentTheme === "light" ? "dark" : "light";
+    if (onThemeChange) {
+      onThemeChange(nextTheme);
+    }
+    setTheme(nextTheme);
   };
 
   const getPositionStyles = (): Record<string, string> => {
     const [vertical, horizontal] = position.split("-") as [string, string];
-    
+
     // Adjust position if bottom-left to avoid overlap with feedback button
-    const horizontalPosition = horizontal === "left" && vertical === "bottom" 
-      ? "80px" 
-      : "20px";
-    
+    const horizontalPosition =
+      horizontal === "left" && vertical === "bottom" ? "80px" : "20px";
+
     return {
       [vertical]: "20px",
       [horizontal]: horizontalPosition,
@@ -54,14 +62,20 @@ export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = ({
   return (
     <button
       onClick={handleToggle}
-      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      aria-label={`Switch to ${
+        theme === "light" ? "dark" : "light"
+      } mode`}
+      title={`Switch to ${
+        theme === "light" ? "dark" : "light"
+      } mode`}
       style={{
         position: "fixed",
         ...getPositionStyles(),
-        backgroundColor: theme === 'light' ? "#f8f9fa" : "#374151",
+        backgroundColor: theme === "light" ? "#f8f9fa" : "#374151",
         color: "inherit",
-        border: `1px solid ${theme === 'light' ? "#dee2e6" : "#4b5563"}`,
+        border: `1px solid ${
+          theme === "light" ? "#dee2e6" : "#4b5563"
+        }`,
         borderRadius: "50%",
         width: `${size}px`,
         height: `${size}px`,
@@ -83,7 +97,7 @@ export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = ({
         e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.15)";
       }}
     >
-      {theme === 'light' ? darkIcon : lightIcon}
+      {theme === "light" ? darkIcon : lightIcon}
     </button>
   );
 };

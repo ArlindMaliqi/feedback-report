@@ -1,3 +1,7 @@
+/**
+ * Offline storage utilities
+ * @module utils/offlineStorage
+ */
 import type { Feedback, UserIdentity } from '../types';
 
 const FEEDBACK_STORAGE_KEY = 'feedback-report-offline-items';
@@ -8,26 +12,12 @@ const USER_IDENTITY_KEY = 'feedback-report-user-identity';
  * @param feedback - The feedback item to store
  */
 export const saveFeedbackOffline = (feedback: Feedback): void => {
+  if (typeof window === 'undefined') return;
+  
   try {
-    const storedItems = getFeedbackFromStorage();
-    
-    // Handle attachments for offline storage
-    const preparedFeedback: Feedback = {
-      ...feedback,
-      // Convert any Blob/File objects to data URLs
-      attachments: feedback.attachments?.map(attachment => {
-        // Only keep dataUrl for offline storage
-        const { file, ...rest } = attachment;
-        return rest;
-      }),
-      submissionStatus: 'pending' as const
-    };
-    
-    // Add to stored items
-    storedItems.push(preparedFeedback);
-    
-    // Save back to storage
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(storedItems));
+    const existing = getFeedbackFromStorage();
+    const updated = [...existing, feedback];
+    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(updated));
   } catch (error) {
     console.error('Failed to save feedback offline:', error);
   }
@@ -38,12 +28,11 @@ export const saveFeedbackOffline = (feedback: Feedback): void => {
  * @returns Array of pending feedback items
  */
 export const getFeedbackFromStorage = (): Feedback[] => {
+  if (typeof window === 'undefined') return [];
+  
   try {
-    const storedData = localStorage.getItem(FEEDBACK_STORAGE_KEY);
-    if (!storedData) return [];
-    
-    const parsedData = JSON.parse(storedData);
-    return Array.isArray(parsedData) ? parsedData : [];
+    const stored = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('Failed to retrieve offline feedback:', error);
     return [];
@@ -55,12 +44,14 @@ export const getFeedbackFromStorage = (): Feedback[] => {
  * @param id - ID of the feedback to remove
  */
 export const removeFeedbackFromStorage = (id: string): void => {
+  if (typeof window === 'undefined') return;
+  
   try {
-    const storedItems = getFeedbackFromStorage();
-    const updatedItems = storedItems.filter(item => item.id !== id);
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(updatedItems));
+    const existing = getFeedbackFromStorage();
+    const filtered = existing.filter(f => f.id !== id);
+    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(filtered));
   } catch (error) {
-    console.error('Failed to remove feedback from offline storage:', error);
+    console.error('Failed to remove feedback from storage:', error);
   }
 };
 
@@ -70,6 +61,8 @@ export const removeFeedbackFromStorage = (id: string): void => {
  * @param updates - Partial updates to apply
  */
 export const updateFeedbackInStorage = (id: string, updates: Partial<Feedback>): void => {
+  if (typeof window === 'undefined') return;
+  
   try {
     const storedItems = getFeedbackFromStorage();
     const updatedItems = storedItems.map(item => 
@@ -125,7 +118,8 @@ export const clearUserIdentity = (): void => {
  * @returns Boolean indicating offline status
  */
 export const isOffline = (): boolean => {
-  return typeof navigator !== 'undefined' && !navigator.onLine;
+  if (typeof window === 'undefined') return false;
+  return !navigator.onLine;
 };
 
 /**

@@ -1,11 +1,12 @@
+/**
+ * Category selector component
+ * @module components/CategorySelector
+ */
 import React, { useState, useEffect } from 'react';
-import { FeedbackCategory, FeedbackSubcategory } from '../types';
+import type { FeedbackCategory, FeedbackSubcategory } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
-/**
- * Props for the CategorySelector component
- */
-interface CategorySelectorProps {
+export interface CategorySelectorProps {
   /** Array of available categories */
   categories: FeedbackCategory[];
   /** Currently selected category ID */

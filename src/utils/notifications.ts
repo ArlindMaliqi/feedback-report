@@ -25,21 +25,13 @@ export const isSonnerAvailable = (): boolean => {
  * @param message - Error message to display
  */
 export const showError = (message: string): void => {
-  if (isSonnerAvailable()) {
-    try {
-      // Dynamically import Sonner to avoid bundling issues
-      const sonner = require('sonner');
-      sonner.toast.error(message, {
-        duration: 4000,
-        position: 'top-right'
-      });
-    } catch (e) {
-      // Fall back to console if dynamic import fails
-      console.error('Error notification:', message);
-    }
-  } else {
-    // Fall back to console if Sonner is not available
-    console.error('Error notification:', message);
+  // Simple implementation - can be enhanced with toast libraries
+  console.error('Feedback Error:', message);
+  
+  // In a real implementation, you might use a toast library
+  if (typeof window !== 'undefined') {
+    // Fallback to alert for now
+    window.alert(`Error: ${message}`);
   }
 };
 
@@ -48,18 +40,11 @@ export const showError = (message: string): void => {
  * @param message - Success message to display
  */
 export const showSuccess = (message: string): void => {
-  if (isSonnerAvailable()) {
-    try {
-      const sonner = require('sonner');
-      sonner.toast.success(message, {
-        duration: 3000,
-        position: 'top-right'
-      });
-    } catch (e) {
-      console.log('Success notification:', message);
-    }
-  } else {
-    console.log('Success notification:', message);
+  console.log('Feedback Success:', message);
+  
+  if (typeof window !== 'undefined') {
+    // You can enhance this with a proper toast notification
+    console.log(`Success: ${message}`);
   }
 };
 
@@ -68,17 +53,9 @@ export const showSuccess = (message: string): void => {
  * @param message - Informational message to display
  */
 export const showInfo = (message: string): void => {
-  if (isSonnerAvailable()) {
-    try {
-      const sonner = require('sonner');
-      sonner.toast(message, {
-        duration: 3000,
-        position: 'top-right'
-      });
-    } catch (e) {
-      console.log('Info notification:', message);
-    }
-  } else {
-    console.log('Info notification:', message);
+  console.info('Feedback Info:', message);
+  
+  if (typeof window !== 'undefined') {
+    console.log(`Info: ${message}`);
   }
 };

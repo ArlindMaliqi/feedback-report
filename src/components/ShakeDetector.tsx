@@ -1,103 +1,88 @@
+/**
+ * Shake detector component using shake.js
+ * @module components/ShakeDetector
+ */
 import React, { useEffect } from "react";
-import { useFeedback } from "../hooks/useFeedback";
 
 /**
  * Props for the ShakeDetector component
  */
 interface ShakeDetectorProps {
+  /** Callback function to be called when a shake is detected */
+  onShake?: () => void;
   /** Sensitivity threshold for shake detection (default: 15) */
   threshold?: number;
   /** Timeout between shake detections in milliseconds (default: 1000) */
   timeout?: number;
-  /** Whether shake detection is disabled (default: false) */
-  disabled?: boolean;
 }
 
 /**
- * Component that enables shake gesture detection to open the feedback modal
+ * Component that enables shake gesture detection
  *
  * This component uses the shake.js library to detect device shake gestures
- * and automatically opens the feedback modal when a shake is detected.
+ * and calls the provided `onShake` callback when a shake is detected.
  * It's particularly useful for mobile applications where users can shake
- * their device to quickly provide feedback.
+ * their device to trigger certain actions.
  *
  * @param props - Component props
+ * @param props.onShake - Callback function to be called on shake
  * @param props.threshold - Shake sensitivity (higher = less sensitive)
  * @param props.timeout - Cooldown period between shake detections
- * @param props.disabled - Whether to disable shake detection
  *
  * @example
  * ```typescript
  * // Basic usage
- * <ShakeDetector />
+ * <ShakeDetector onShake={() => console.log('Shaken!')} />
  *
  * // With custom sensitivity
- * <ShakeDetector threshold={20} timeout={2000} />
- *
- * // Conditionally disabled
- * <ShakeDetector disabled={!isMobile} />
+ * <ShakeDetector onShake={handleShake} threshold={20} timeout={2000} />
  * ```
  *
  * @remarks
- * - Requires FeedbackProvider to be present in the component tree
  * - Requires the shake.js library to be installed
  * - Only works on devices with motion sensors (mobile devices)
  * - Gracefully handles cases where shake.js is not available
  * - This component renders nothing visually
  */
 export const ShakeDetector: React.FC<ShakeDetectorProps> = ({
+  onShake,
   threshold = 15,
   timeout = 1000,
-  disabled = false,
 }) => {
-  const { openModal } = useFeedback();
-
   useEffect(() => {
-    if (disabled) return;
+    let shakeInstance: any = null;
 
-    let shake: any = null;
-
-    const initShake = async (): Promise<(() => void) | undefined> => {
+    const initializeShake = async () => {
       try {
-        // Dynamic import with proper error handling
-        const shakeModule = await import("shake.js");
-        const ShakeJS = shakeModule.default || shakeModule;
+        // Dynamically import shake.js
+        const Shake = (await import("shake.js")).default;
 
-        shake = new ShakeJS({
+        shakeInstance = new Shake({
           threshold,
           timeout,
         });
 
-        const handleShake = () => {
-          openModal();
-        };
+        shakeInstance.start();
 
-        shake.start();
-        window.addEventListener("shake", handleShake);
-
-        return () => {
-          window.removeEventListener("shake", handleShake);
-        };
+        if (onShake) {
+          window.addEventListener("shake", onShake);
+        }
       } catch (error) {
-        console.warn("Shake detection library not available:", error);
-        return undefined;
+        console.warn("Shake detection not available:", error);
       }
     };
 
-    let cleanup: (() => void) | undefined;
-    initShake().then((cleanupFn) => {
-      cleanup = cleanupFn;
-    });
+    initializeShake();
 
     return () => {
-      if (shake) {
-        shake.stop();
+      if (shakeInstance) {
+        shakeInstance.stop();
       }
-      if (cleanup) {
-        cleanup();
+      if (onShake) {
+        window.removeEventListener("shake", onShake);
       }
     };
-  }, [openModal, threshold, timeout, disabled]);
+  }, [onShake, threshold, timeout]);
 
   // This component doesn't render anything
   return null;

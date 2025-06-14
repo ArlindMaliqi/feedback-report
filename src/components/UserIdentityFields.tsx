@@ -1,3 +1,7 @@
+/**
+ * User identity fields component
+ * @module components/UserIdentityFields
+ */
 import React, { useEffect, useState } from 'react';
 import { UserIdentity, FeedbackConfig } from '../types';
 import { getUserIdentity, saveUserIdentity } from '../utils/offlineStorage';
