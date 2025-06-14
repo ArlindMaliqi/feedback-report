@@ -39,10 +39,10 @@ interface ThemeProviderProps {
  * }
  * ```
  */
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
-  children, 
-  initialTheme = 'system' 
-}) => {
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, initialTheme = 'system' }) => {
+  const [theme, setThemeState] = useState<'light' | 'dark'>('light');
+  const [preference, setPreference] = useState<ThemePreference>(initialTheme);
+
   /**
    * Gets system preference for dark mode
    * @returns Current system theme preference
@@ -106,39 +106,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return getSystemTheme();
   }, [initialTheme, getWebsiteTheme, getSystemTheme]);
 
-  const [theme, setThemeState] = useState<'light' | 'dark'>(getInitialTheme());
-  const [preference, setPreference] = useState<ThemePreference>(initialTheme);
-
   // Listen for system theme changes
   useEffect(() => {
     if (preference !== 'system') return;
     
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only update if website doesn't specify a theme
-      if (!getWebsiteTheme()) {
-        setThemeState(e.matches ? 'dark' : 'light');
+    const updateSystemTheme = () => {
+      if (preference === 'system') {
+        setThemeState(mediaQuery.matches ? 'dark' : 'light');
       }
     };
-    
-    // Modern browsers
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } 
-    // Older implementations
-    else if ('addListener' in mediaQuery) {
-      // @ts-ignore - For older browsers
-      mediaQuery.addListener(handleChange);
-      return () => {
-        // @ts-ignore - For older browsers
-        mediaQuery.removeListener(handleChange);
-      };
-    }
-    
-    return undefined;
-  }, [preference, getWebsiteTheme]);
+
+    updateSystemTheme();
+    mediaQuery.addEventListener('change', updateSystemTheme);
+    return () => mediaQuery.removeEventListener('change', updateSystemTheme);
+  }, [preference]);
 
   // Listen for website theme changes
   useEffect(() => {
@@ -180,18 +162,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   // Set specific theme
   const setTheme = useCallback((newTheme: ThemePreference) => {
     setPreference(newTheme);
-    
     if (newTheme === 'system') {
-      const websiteTheme = getWebsiteTheme();
-      setThemeState(websiteTheme || getSystemTheme());
+      const systemTheme = getSystemTheme();
+      setThemeState(systemTheme);
     } else {
       setThemeState(newTheme);
     }
-  }, [getWebsiteTheme, getSystemTheme]);
+    localStorage.setItem('feedback-widget-theme', newTheme);
+  }, []);
 
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo<ThemeContextType>(() => ({
     theme,
+    systemTheme: getSystemTheme(),
     toggleTheme,
     setTheme
   }), [theme, toggleTheme, setTheme]);

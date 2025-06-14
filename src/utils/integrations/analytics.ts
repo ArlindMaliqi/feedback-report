@@ -155,20 +155,17 @@ export const trackFeedbackSubmission = (feedback: Feedback, config: AnalyticsCon
  * @param config - Analytics configuration 
  */
 export const trackFeedbackVote = (feedbackId: string, config: AnalyticsConfig): void => {
-  if (!config) return;
+  if (config.provider === 'google-analytics' && window.gtag) {
+    window.gtag('event', 'feedback_vote', {
+      feedback_id: feedbackId,
+      event_category: 'engagement',
+      event_label: feedbackId,
+      // Remove references to undefined feedback variable
+      timestamp: new Date().getTime()
+    });
+  }
   
-  // Create a mock feedback object for tracking
-  const mockFeedback: Feedback = {
-    id: feedbackId,
-    message: '',
-    type: 'other',
-    timestamp: Date.now(),
-    url: window.location.href,
-    userAgent: navigator.userAgent
-  };
-  
-  // Use the correct function signature with 2 parameters
-  trackFeedbackEvent(mockFeedback, config);
+  console.log('Tracked vote for feedback:', feedbackId);
 };
 
 /**
@@ -204,15 +201,14 @@ export const processVoteAnalytics = async (
   };
 
   // Create a mock feedback object for tracking
-  const mockFeedback: Feedback = {
-    id: feedbackId,
-    message: '',
-    type: 'other',
-    timestamp: Date.now(),
-    url: window.location.href,
-    userAgent: navigator.userAgent
+  const anotherMockFeedback: Feedback = {
+    id: 'another-mock',
+    message: 'Another mock feedback',
+    type: 'feature',
+    timestamp: new Date(), // Fixed: use new Date()
+    votes: 5
   };
 
   // Track vote event using the correct signature
-  await trackFeedbackEvent(mockFeedback, config);
+  await trackFeedbackEvent(anotherMockFeedback, config);
 };

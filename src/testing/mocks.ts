@@ -84,7 +84,7 @@ export const createMockAnalyticsConfig = (overrides: Partial<AnalyticsConfig> = 
     provider: 'google-analytics',
     trackingId: 'UA-MOCK-ID',
     eventName: 'mock_feedback_event',
-    trackEvent: jest.fn(),
+    trackEvents: true, // Fixed: use trackEvents instead of trackEvent
     ...overrides
   };
 };
@@ -101,8 +101,8 @@ export const createMockFeedbackConfig = (overrides: Partial<FeedbackConfig> = {}
     enableOfflineSupport: true,
     enableVoting: true,
     collectUserAgent: false,
-    collectUrl: false,
-    enableAttachments: true,
+    // Remove collectUrl - not a valid property
+    enableFileAttachments: true, // Fixed: use enableFileAttachments instead of enableAttachments
     maxAttachments: 3,
     analytics: createMockAnalyticsConfig(),
     issueTracker: createMockIssueTrackerConfig(),
@@ -174,4 +174,28 @@ export const mockFetchNetworkError = () => {
   global.fetch = jest.fn(() =>
     Promise.reject(new Error('Network error'))
   );
+};
+
+/**
+ * Mock analytics configuration
+ */
+export const mockAnalyticsConfig: AnalyticsConfig = {
+  provider: 'google-analytics',
+  trackingId: 'GA_TRACKING_ID',
+  trackEvents: true,
+  trackPageViews: true,
+  customEvents: {}
+};
+
+/**
+ * Mock feedback configuration
+ */
+export const mockConfig: FeedbackConfig = {
+  apiEndpoint: '/api/feedback',
+  theme: 'light',
+  enableShakeDetection: true,
+  enableOfflineSupport: false,
+  enableVoting: true,
+  categories: [],
+  analytics: mockAnalyticsConfig
 };

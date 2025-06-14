@@ -59,11 +59,12 @@ export const validateAttachment = (
 export const createAttachment = async (file: File): Promise<FeedbackAttachment> => {
   const attachment: FeedbackAttachment = {
     id: generateId(),
-    filename: file.name,
-    mimeType: file.type,
-    size: file.size,
     file,
-    status: 'pending',
+    type: getAttachmentType(file),
+    size: file.size,
+    name: file.name,
+    filename: file.name,
+    mimeType: file.type
   };
 
   // Create preview for images
@@ -71,12 +72,8 @@ export const createAttachment = async (file: File): Promise<FeedbackAttachment> 
     attachment.previewUrl = URL.createObjectURL(file);
   }
 
-  // Create data URL for offline storage
-  try {
-    attachment.dataUrl = await fileToDataUrl(file);
-  } catch (error) {
-    console.error('Failed to convert file to data URL:', error);
-  }
+  // Generate data URL for all files for storage
+  attachment.dataUrl = await fileToDataUrl(file);
 
   return attachment;
 };
@@ -126,6 +123,16 @@ export const cleanupAttachments = (attachments: FeedbackAttachment[]): void => {
     if (attachment.previewUrl) {
       URL.revokeObjectURL(attachment.previewUrl);
     }
+  }
+};
+
+/**
+ * Cleans up resources used by a single attachment
+ * @param attachment - Attachment to clean up
+ */
+export const cleanupAttachment = (attachment: FeedbackAttachment): void => {
+  if (attachment.previewUrl) {
+    URL.revokeObjectURL(attachment.previewUrl);
   }
 };
 
@@ -200,4 +207,28 @@ export const captureScreenshot = async (): Promise<FeedbackAttachment | null> =>
     console.error('Failed to capture screenshot:', error);
     return null;
   }
+};
+
+/**
+ * Gets the type of an attachment based on the file's MIME type
+ * @param file - File to check
+ * @returns 'image', 'document', 'video', or 'other'
+ */
+const getAttachmentType = (file: File): 'image' | 'document' | 'video' | 'other' => {
+  const mimeType = file.type.toLowerCase();
+  
+  if (mimeType.startsWith('image/')) {
+    return 'image';
+  } else if (mimeType.startsWith('video/')) {
+    return 'video';
+  } else if (
+    mimeType.startsWith('application/pdf') ||
+    mimeType.startsWith('application/msword') ||
+    mimeType.startsWith('application/vnd.openxmlformats-officedocument') ||
+    mimeType.startsWith('text/')
+  ) {
+    return 'document';
+  }
+  
+  return 'other';
 };

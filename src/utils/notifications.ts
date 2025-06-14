@@ -20,6 +20,21 @@ export const isSonnerAvailable = (): boolean => {
   }
 };
 
+// Optional import for sonner
+let toast: any = null;
+try {
+  const sonner = require('sonner');
+  toast = sonner.toast;
+} catch {
+  // Fallback to console or custom notification
+  toast = {
+    success: (message: string) => console.log(`✅ ${message}`),
+    error: (message: string) => console.error(`❌ ${message}`),
+    info: (message: string) => console.info(`ℹ️ ${message}`),
+    warning: (message: string) => console.warn(`⚠️ ${message}`)
+  };
+}
+
 /**
  * Shows an error notification
  * @param message - Error message to display
@@ -57,5 +72,19 @@ export const showInfo = (message: string): void => {
   
   if (typeof window !== 'undefined') {
     console.log(`Info: ${message}`);
+  }
+};
+
+/**
+ * Shows a notification of any type
+ * @param type - Type of the notification (success, error, info, warning)
+ * @param message - Message to display
+ */
+export const showNotification = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
+  if (toast && typeof toast[type] === 'function') {
+    toast[type](message);
+  } else {
+    // Fallback notification
+    console.log(`${type.toUpperCase()}: ${message}`);
   }
 };

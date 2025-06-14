@@ -199,7 +199,7 @@ const formatTeamsMessage = (feedback: Feedback, config: NotificationConfig): any
     themeColor = '107C10'; // Green
   }
   
-  // Build the sections
+  // Build the sections with flexible facts array
   const sections: TeamsSection[] = [
     {
       activityTitle: `New Feedback: ${feedback.type || 'General Feedback'}`,
@@ -208,10 +208,10 @@ const formatTeamsMessage = (feedback: Feedback, config: NotificationConfig): any
     }
   ];
   
-  // Add facts
-  const facts = [
-    { name: 'Type', value: feedback.type || 'Not specified' }
-  ];
+  // Create facts array with proper typing
+  const facts: Array<{ name: string; value: string }> = [];
+  
+  facts.push({ name: 'Type', value: feedback.type || 'Not specified' });
   
   if (feedback.category) {
     facts.push({
@@ -236,10 +236,8 @@ const formatTeamsMessage = (feedback: Feedback, config: NotificationConfig): any
     facts.push({ name: 'Attachments', value: `${feedback.attachments.length} file(s)` });
   }
   
-  // Fix the facts assignment by adding a new section with proper type
-  sections.push({ 
-    facts: facts
-  });
+  // Add facts to sections properly
+  sections.push({ facts });
   
   // Construct the final message
   return {
@@ -367,4 +365,53 @@ export const sendDiscordNotification = async (
 ): Promise<void> => {
   // Implementation for Discord notification
   console.log('Sending Discord notification for feedback:', feedback.id);
+};
+
+/**
+ * Create Microsoft Teams message payload
+ */
+const createTeamsMessage = (feedback: Feedback): any => {
+  // Create properly typed facts array
+  const facts: Array<{ name: string; value: string }> = [];
+
+  facts.push({ name: 'Type', value: feedback.type || 'Not specified' });
+
+  if (feedback.priority) {
+    facts.push({ name: 'Priority', value: feedback.priority });
+  }
+
+  if (feedback.category) {
+    facts.push({ 
+      name: 'Category', 
+      value: `${feedback.category}${feedback.subcategory ? ` / ${feedback.subcategory}` : ''}` 
+    });
+  }
+
+  if (feedback.url) {
+    facts.push({ name: 'Page', value: feedback.url });
+  }
+
+  if (feedback.user?.name) {
+    facts.push({ name: 'User', value: feedback.user.name });
+  }
+
+  if (feedback.user?.email) {
+    facts.push({ name: 'Email', value: feedback.user.email });
+  }
+
+  if (feedback.attachments && feedback.attachments.length > 0) {
+    facts.push({ name: 'Attachments', value: `${feedback.attachments.length} file(s)` });
+  }
+
+  return {
+    "@type": "MessageCard",
+    "@context": "https://schema.org/extensions",
+    summary: "New Feedback Received",
+    themeColor: feedback.type === 'bug' ? 'FF0000' : '0078D4',
+    sections: [{
+      activityTitle: 'New Feedback',
+      activitySubtitle: feedback.message,
+      facts: facts
+    }]
+  };
 };

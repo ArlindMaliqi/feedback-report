@@ -7,46 +7,24 @@ import type { FeedbackConfig, Feedback, CustomIssueTrackerConfig } from '../../t
  * Example configuration for Next.js applications
  */
 const nextJsConfig: FeedbackConfig = {
-  // API endpoint (use Next.js API route)
-  apiEndpoint: '/api/feedback',
-  
-  // Enable offline support
+  apiEndpoint: process.env.NEXT_PUBLIC_FEEDBACK_API_ENDPOINT,
+  theme: 'system',
+  enableShakeDetection: true,
   enableOfflineSupport: true,
-  
-  // Add environment info
-  collectUserAgent: true,
-  collectUrl: true,
-  
+  enableVoting: true,
+  collectUserIdentity: true,
+  enableFileAttachments: true,
+  maxFileSize: 10 * 1024 * 1024,
+  // Removed additionalData - not a valid config property
   // Setup GitHub issue creation via Next.js API route - using CustomIssueTrackerConfig
   issueTracker: {
     provider: 'custom',
-    apiEndpoint: '/api/create-issue',
-    createIssue: async (feedback: Feedback): Promise<string> => {
-      try {
-        const response = await fetch('/api/create-issue', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(feedback)
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to create issue');
-        }
-        
-        const data = await response.json();
-        return data.issueId;
-      } catch (error) {
-        console.error('Error creating issue:', error);
-        throw error;
-      }
+    apiEndpoint: '/api/github-issues',
+    headers: {
+      'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json'
     }
   } as CustomIssueTrackerConfig,
-  
-  // Additional metadata for Next.js
-  additionalData: {
-    nextVersion: process.env.NEXT_PUBLIC_VERSION,
-    environment: process.env.NEXT_PUBLIC_ENVIRONMENT
-  }
 };
 
 /**
@@ -56,11 +34,11 @@ const nextJsConfig: FeedbackConfig = {
  */
 export const NextJsFeedback: React.FC = () => {
   return (
-    <FeedbackWidget 
-      config={nextJsConfig}
+    <FeedbackWidget
+      apiEndpoint={nextJsConfig.apiEndpoint}
       theme="system"
-      template="bug-report"
-      animation={{ enter: 'zoom', exit: 'fade', duration: 300 }}
+      enableShakeDetection={nextJsConfig.enableShakeDetection}
+      // Removed template and animation props
     />
   );
 };

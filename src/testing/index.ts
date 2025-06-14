@@ -5,7 +5,7 @@
 import React, { ReactNode } from 'react';
 import { FeedbackProvider } from '../components/FeedbackProvider';
 import { ThemeProvider } from '../contexts/ThemeContext';
-import type { FeedbackConfig, Feedback, ThemePreference } from '../types';
+import type { FeedbackConfig, Feedback, ThemePreference, FeedbackProviderProps } from '../types';
 
 /**
  * Props for the test wrapper component
@@ -29,6 +29,11 @@ interface TestWrapperProps {
 interface FeedbackProviderTestProps {
   initialFeedback?: Feedback[];
   modalOpen?: boolean;
+}
+
+// Extend the imported FeedbackProviderProps interface for testing
+interface TestFeedbackProviderProps extends FeedbackProviderProps {
+  _testProps?: FeedbackProviderTestProps;
 }
 
 /**
@@ -80,17 +85,15 @@ export const TestWrapper: React.FC<TestWrapperProps> = ({
 /**
  * Creates a mock feedback object for testing
  */
-export const createMockFeedback = (overrides: Partial<Feedback> = {}): Feedback => {
-  return {
-    id: 'test-feedback-1',
-    message: 'This is a test feedback message',
-    type: 'bug',
-    timestamp: Date.now(), // Changed from new Date() to Date.now()
-    url: 'https://example.com/test-page',
-    userAgent: 'Mozilla/5.0 (Test Browser)',
-    ...overrides,
-  };
-};
+export const createMockFeedback = (): Feedback => ({
+  id: 'test-feedback-1',
+  message: 'This is a test feedback',
+  type: 'bug',
+  timestamp: new Date(), // Fixed: use new Date() instead of Date.now()
+  votes: 0,
+  status: 'open',
+  priority: 'medium'
+});
 
 /**
  * Creates a jest mock for the useFeedback hook

@@ -3,10 +3,11 @@ import type { TemplateConfig } from '../types';
 /**
  * Default feedback template
  */
-export const defaultTemplate: TemplateConfig = {
+export const DEFAULT_TEMPLATE: TemplateConfig = {
   id: 'default',
+  name: 'Default Feedback',
   title: 'Send Feedback',
-  description: 'We value your feedback to improve our product.',
+  description: 'General feedback form',
   fields: [
     {
       id: 'type',
@@ -35,10 +36,11 @@ export const defaultTemplate: TemplateConfig = {
 /**
  * Bug report template with structured fields
  */
-export const bugReportTemplate: TemplateConfig = {
+export const BUG_REPORT_TEMPLATE: TemplateConfig = {
   id: 'bug-report',
+  name: 'Bug Report',
   title: 'Report a Bug',
-  description: 'Help us squash bugs by providing detailed information.',
+  description: 'Report bugs and issues',
   fields: [
     {
       id: 'title',
@@ -99,10 +101,11 @@ export const bugReportTemplate: TemplateConfig = {
 /**
  * Feature request template
  */
-export const featureRequestTemplate: TemplateConfig = {
+export const FEATURE_REQUEST_TEMPLATE: TemplateConfig = {
   id: 'feature-request',
+  name: 'Feature Request',
   title: 'Request a Feature',
-  description: 'Share your ideas to help us improve the product.',
+  description: 'Suggest new features',
   fields: [
     {
       id: 'title',
@@ -154,10 +157,11 @@ export const featureRequestTemplate: TemplateConfig = {
 /**
  * General feedback template
  */
-export const generalTemplate: TemplateConfig = {
+export const GENERAL_FEEDBACK_TEMPLATE: TemplateConfig = {
   id: 'general',
+  name: 'General Feedback',
   title: 'General Feedback',
-  description: 'Share your thoughts, ideas, or suggestions.',
+  description: 'General feedback and suggestions',
   fields: [
     {
       id: 'rating',
@@ -198,14 +202,14 @@ export const generalTemplate: TemplateConfig = {
 export const getTemplateById = (id: string): TemplateConfig => {
   switch (id) {
     case 'bug-report':
-      return bugReportTemplate;
+      return BUG_REPORT_TEMPLATE;
     case 'feature-request':
-      return featureRequestTemplate;
+      return FEATURE_REQUEST_TEMPLATE;
     case 'general':
-      return generalTemplate;
+      return GENERAL_FEEDBACK_TEMPLATE;
     case 'default':
     default:
-      return defaultTemplate;
+      return DEFAULT_TEMPLATE;
   }
 };
 
@@ -213,8 +217,8 @@ export const getTemplateById = (id: string): TemplateConfig => {
  * Gets all available templates
  */
 export const getAllTemplates = (): TemplateConfig[] => [
-  defaultTemplate,
-  bugReportTemplate,
-  featureRequestTemplate,
-  generalTemplate
+  DEFAULT_TEMPLATE,
+  BUG_REPORT_TEMPLATE,
+  FEATURE_REQUEST_TEMPLATE,
+  GENERAL_FEEDBACK_TEMPLATE
 ];

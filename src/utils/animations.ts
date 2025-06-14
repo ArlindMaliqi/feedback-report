@@ -3,11 +3,11 @@ import type { AnimationConfig } from '../types';
 /**
  * Default animation configuration
  */
-export const defaultAnimationConfig: AnimationConfig = {
-  enter: 'fade',
-  exit: 'fade',
+const defaultAnimationConfig: Required<AnimationConfig> = {
+  enter: 'fadeIn',
+  exit: 'fadeOut',
   duration: 300,
-  easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+  easing: 'cubic-bezier(0.4, 0, 0.2, 1)' // Now properly defined in AnimationConfig
 };
 
 /**

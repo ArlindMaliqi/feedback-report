@@ -17,17 +17,18 @@ import { useTheme } from '../hooks/useTheme';
 /**
  * Props for the FileAttachmentInput component
  */
-interface FileAttachmentInputProps {
+export interface FileAttachmentInputProps {
   /** Current attachments */
   attachments: FeedbackAttachment[];
   /** Function to update attachments */
   onAttachmentsChange: (attachments: FeedbackAttachment[]) => void;
   /** Configuration options */
-  config?: Pick<FeedbackConfig, 
-    'maxAttachments' | 
-    'maxAttachmentSize' | 
+  config?: Pick<FeedbackConfig,
+    'maxAttachments' |
     'allowedAttachmentTypes'
-  >;
+  > & {
+    maxAttachmentSize?: number;
+  };
   /** Whether the component is disabled */
   disabled?: boolean;
 }
@@ -51,9 +52,9 @@ export const FileAttachmentInput: React.FC<FileAttachmentInputProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const maxAttachments = config.maxAttachments || 3;
-  const maxSize = config.maxAttachmentSize || DEFAULT_MAX_SIZE;
-  const allowedTypes = config.allowedAttachmentTypes || DEFAULT_ALLOWED_TYPES;
-  
+  const maxSize = config?.maxAttachmentSize || 5 * 1024 * 1024;
+  const allowedTypes = config?.allowedAttachmentTypes || ['image/*', 'application/pdf'];
+
   const canAddMoreAttachments = attachments.length < maxAttachments;
 
   // Handle file selection
@@ -222,7 +223,7 @@ export const FileAttachmentInput: React.FC<FileAttachmentInputProps> = ({
             : 'Maximum number of attachments reached'}
         </p>
         <small style={{ display: 'block', marginTop: '0.25rem', color: theme === 'dark' ? '#9ca3af' : '#718096' }}>
-          Allowed types: {allowedTypes.map(t => t.replace('image/', '.')).join(', ')}
+          Allowed types: {allowedTypes.map((t: string) => t.replace('image/', '.')).join(', ')}
           <br />
           Max size: {formatFileSize(maxSize)}
         </small>
@@ -254,7 +255,7 @@ export const FileAttachmentInput: React.FC<FileAttachmentInputProps> = ({
         <div style={styles.previewsContainer}>
           {attachments.map(attachment => (
             <div key={attachment.id} style={styles.previewItem}>
-              {attachment.mimeType.startsWith('image/') && attachment.previewUrl ? (
+              {attachment.mimeType?.startsWith('image/') && attachment.previewUrl ? (
                 <img 
                   src={attachment.previewUrl} 
                   alt={attachment.filename} 
@@ -262,7 +263,7 @@ export const FileAttachmentInput: React.FC<FileAttachmentInputProps> = ({
                 />
               ) : (
                 <div style={styles.previewFile}>
-                  {attachment.filename.split('.').pop()?.toUpperCase() || 'FILE'}
+                  {attachment.filename?.split('.').pop()?.toUpperCase() || 'FILE'}
                   <br />
                   {formatFileSize(attachment.size)}
                 </div>

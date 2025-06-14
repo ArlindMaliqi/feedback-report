@@ -7,12 +7,11 @@ import type { FeedbackCategory } from '../types';
 /**
  * Default feedback categories
  */
-export const defaultCategories: FeedbackCategory[] = [
+export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
   {
     id: 'bug',
     name: 'Bug Report',
-    description: 'Something is not working correctly',
-    icon: '🐛',
+    description: 'Report a problem or issue',
     color: '#ff4444',
     subcategories: [
       { id: 'ui', name: 'User Interface', description: 'Visual or layout issues' },
@@ -24,7 +23,6 @@ export const defaultCategories: FeedbackCategory[] = [
     id: 'feature',
     name: 'Feature Request',
     description: 'Suggest a new feature or improvement',
-    icon: '💡',
     color: '#4CAF50',
     subcategories: [
       { id: 'enhancement', name: 'Enhancement', description: 'Improve existing functionality' },
@@ -34,8 +32,7 @@ export const defaultCategories: FeedbackCategory[] = [
   {
     id: 'improvement',
     name: 'Improvement',
-    description: 'Suggest ways to make things better',
-    icon: '⚡',
+    description: 'Suggest an enhancement to existing functionality',
     color: '#2196F3',
     subcategories: [
       { id: 'usability', name: 'Usability', description: 'Make it easier to use' },
@@ -46,7 +43,6 @@ export const defaultCategories: FeedbackCategory[] = [
     id: 'other',
     name: 'Other',
     description: 'General feedback or questions',
-    icon: '💬',
     color: '#9E9E9E',
     subcategories: []
   }

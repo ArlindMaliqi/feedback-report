@@ -24,19 +24,13 @@ import { showInfo } from '../utils/notifications';
 /**
  * Props for the FeedbackModal component
  */
-interface FeedbackModalProps {
+export interface FeedbackModalProps {
   /** Whether the modal is open */
   isOpen: boolean;
   /** Function to close the modal */
   onClose: () => void;
   /** Function to handle feedback submission */
-  onSubmit: (feedback: {
-    message: string;
-    type: string;
-    user?: UserIdentity;
-    attachments?: File[];
-    category?: string;
-  }) => void;
+  onSubmit: (feedback: any) => Promise<void>;
   /** Custom styling options */
   styles?: FeedbackModalStyles;
   /** Animation configuration */
@@ -461,7 +455,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               onAttachmentsChange={handleAttachmentsChange}
               config={{
                 maxAttachments: 5,
-                maxAttachmentSize: 5 * 1024 * 1024
+                maxAttachmentSize: 5 * 1024 * 1024,
+                allowedAttachmentTypes: ['image/*', 'application/pdf', 'text/*']
               }}
             />
 

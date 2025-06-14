@@ -330,7 +330,10 @@ export const OptimizedFeedbackWidget: React.FC<OptimizedFeedbackWidgetProps> = (
               <LazyFeedbackModal 
                 isOpen={false}
                 onClose={() => {}}
-                onSubmit={() => {}}
+                onSubmit={async () => {
+                  // Handle submission here
+                  await Promise.resolve();
+                }}
                 styles={modalStyles} 
                 animation={animation}
                 templateId={template}

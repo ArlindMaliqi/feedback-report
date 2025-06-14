@@ -102,7 +102,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     },
     categoryOption: (category: FeedbackCategory) => ({
       backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
-      color: category.color || (theme === 'dark' ? '#e5e7eb' : 'inherit'),
+      color: category.color || (theme === 'dark' ? '#e5e7eb' : '#374151'),
     }),
     helpText: {
       fontSize: '0.75rem',

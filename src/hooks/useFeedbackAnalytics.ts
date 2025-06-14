@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useFeedback } from './useFeedback';
 import type { Feedback } from '../types';
 
@@ -209,10 +209,18 @@ export function useFeedbackAnalytics() {
     return distribution;
   };
   
+  // New callback to get pending count
+  const getPendingCount = useCallback(() => {
+    return feedbacks.filter(feedback => 
+      feedback.submissionStatus === 'pending' // Property exists now
+    ).length;
+  }, [feedbacks]);
+  
   return {
     statistics,
     getRecentTrends,
     getFeedbackDistribution,
+    getPendingCount, // Expose new callback
     // Helper method to get feedback items by type
     getByType: (type: Feedback['type']) => feedbacks.filter(f => f.type === type),
     // Helper method to calculate votes distribution

@@ -113,17 +113,23 @@ export const ALL_MESSAGES: Record<string, Record<string, string>> = {
  * @param config - Localization configuration
  * @returns Function to translate message keys
  */
-export const createTranslator = (config: LocalizationConfig = {}): ((key: string, params?: Record<string, string | number>) => string) => {
-  // If a custom translator is provided, use it
+export const createTranslator = (config: LocalizationConfig = { locale: 'en' }): ((key: string, params?: Record<string, string | number>) => string) => {
+  const { locale } = config;
+
   if (typeof config.t === 'function') {
-    // Cast to the correct signature to fix type error
+    // Use custom translation function if provided
     return config.t as (key: string, params?: Record<string, string | number>) => string;
   }
-  
-  // Determine which locale to use
-  const locale = config.locale || 'en';
+
+  // Use built-in translation system
   const fallbackLocale = config.defaultLocale || 'en';
-  
+
+  // Merge translations
+  const translations = {
+    ...(config.messages?.[fallbackLocale] || {}),
+    ...(config.messages?.[locale] || {})
+  };
+
   // Create a type-safe messages object
   const messages: Record<string, string> = {
     ...(ALL_MESSAGES[fallbackLocale as keyof typeof ALL_MESSAGES] || {}),

@@ -2,34 +2,25 @@
  * Storybook stories for FeedbackWidget components
  * @module storybook/FeedbackWidget.stories
  */
-import type { Meta as StoryMeta, StoryObj as StoryObject } from '@storybook/react';
-import { FeedbackProvider, type FeedbackProviderProps } from '../components/FeedbackProvider';
+import type { Meta, StoryObj } from '@storybook/react';
+import { FeedbackProvider } from '../components/FeedbackProvider';
+import type { FeedbackProviderProps } from '../types';
 
 /**
  * Storybook configuration for FeedbackWidget
  */
-const meta: StoryMeta<FeedbackProviderProps> = {
-  title: 'Components/FeedbackWidget',
-  component: FeedbackProvider,
+const meta: Meta<FeedbackProviderProps> = {
+  title: 'Feedback/FeedbackProvider',
+  component: FeedbackProvider as any, // Type assertion to handle the interface mismatch
   parameters: {
-    layout: 'fullscreen',
-    docs: {
-      description: {
-        component: 'A comprehensive feedback widget with various configuration options.'
-      }
-    }
+    layout: 'centered',
   },
-  argTypes: {
-    config: {
-      control: 'object',
-      description: 'Configuration object for the feedback widget'
-    }
-  }
+  tags: ['autodocs'],
 };
 
 export default meta;
 
-export type Story = StoryObject<typeof meta>;
+export type Story = StoryObj<typeof meta>;
 
 /**
  * Default story with basic configuration

@@ -34,7 +34,7 @@ export const FeedbackListItem: React.FC<FeedbackListItemProps> = ({
 }) => {
   const { theme } = useTheme();
   const hasVoted = feedback.voters?.includes(currentUserId || '') || false;
-  
+
   // Get category display name if available
   const categoryDisplay = feedback.category && categories.length > 0
     ? getCategoryDisplayName(categories, feedback.category, feedback.subcategory)
@@ -109,9 +109,7 @@ export const FeedbackListItem: React.FC<FeedbackListItemProps> = ({
             {categoryDisplay}
           </span>
           {feedback.submissionStatus === 'pending' && (
-            <span style={styles.offline}>
-              (Pending upload)
-            </span>
+            <span className="text-yellow-600 text-sm">Pending...</span>
           )}
         </div>
         {enableVoting && (
@@ -145,9 +143,9 @@ export const FeedbackListItem: React.FC<FeedbackListItemProps> = ({
       
       <div style={styles.footer}>
         {feedback.url && (
-          <div title="Submitted from">
+          <a href={feedback.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
             📍 {new URL(feedback.url).pathname}
-          </div>
+          </a>
         )}
       </div>
     </div>

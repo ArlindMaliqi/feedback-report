@@ -21,32 +21,14 @@ declare global {
  * Example configuration for Gatsby applications
  */
 const gatsbyConfig: FeedbackConfig = {
-  // Example using Gatsby Functions (serverless functions)
-  apiEndpoint: '/.netlify/functions/feedback',
-  
-  // Enable offline support
+  apiEndpoint: process.env.GATSBY_FEEDBACK_API_ENDPOINT,
+  theme: 'system',
+  enableShakeDetection: true,
   enableOfflineSupport: true,
-  
-  // Add Gatsby-specific metadata
-  collectUserAgent: true,
-  collectUrl: true,
-  
-  // Analytics integration
-  analytics: {
-    provider: 'custom',
-    trackEvent: (eventName: string, eventData: Record<string, any>) => {
-      // Example integration with Gatsby's analytics API
-      if (typeof window !== 'undefined' && window.gatsbyAnalytics) {
-        window.gatsbyAnalytics.trackEvent({
-          eventCategory: 'Feedback',
-          eventAction: eventName,
-          eventValue: JSON.stringify(eventData)
-        });
-      }
-    }
-  },
-  
-  // Add localization
+  enableVoting: false,
+  collectUserIdentity: true,
+  enableFileAttachments: true,
+  maxFileSize: 5 * 1024 * 1024,
   localization: {
     locale: typeof window !== 'undefined' ? window.navigator.language : 'en'
   }
@@ -59,10 +41,10 @@ const gatsbyConfig: FeedbackConfig = {
  */
 export const GatsbyFeedback: React.FC = () => {
   return (
-    <FeedbackWidget 
-      config={gatsbyConfig}
+    <FeedbackWidget
+      apiEndpoint={gatsbyConfig.apiEndpoint}
       theme="system"
-      animation={{ enter: 'slide-up', exit: 'fade', duration: 300 }}
+      enableShakeDetection={gatsbyConfig.enableShakeDetection}
     />
   );
 };

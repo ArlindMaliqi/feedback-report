@@ -70,6 +70,11 @@ export const FeedbackVoteButton: React.FC<FeedbackVoteButtonProps> = ({
     
     setIsVoting(true);
     try {
+      if (!voteFeedback) {
+        console.warn('voteFeedback function not available');
+        return;
+      }
+      
       await voteFeedback(feedbackId);
     } catch (error) {
       console.error('Error voting for feedback:', error);

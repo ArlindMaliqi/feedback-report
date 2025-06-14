@@ -56,6 +56,16 @@ To install the React Feedback Report Widget from NPM, run the following command:
 npm install react-feedback-report-widget
 ```
 
+### Optional Dependencies
+
+For enhanced toast notifications, you can optionally install:
+
+```bash
+npm install sonner
+```
+
+The widget will gracefully fall back to console logging if sonner is not available.
+
 ### From GitHub Packages
 
 You can also install directly from GitHub Packages:
