@@ -1,5 +1,6 @@
 import React from "react";
 import { useFeedback } from "../hooks/useFeedback";
+import { useTheme } from "../hooks/useTheme";
 
 /**
  * Props for the FeedbackButton component
@@ -15,50 +16,38 @@ interface FeedbackButtonProps {
   textColor?: string;
   /** Text to display inside the button */
   text?: string;
+  /** Tooltip text (default: "Send Feedback") */
+  tooltip?: string;
 }
 
 /**
  * A floating feedback button that opens the feedback modal when clicked
  *
  * This component renders a fixed-position circular button that users can click
- * to open the feedback modal. It's fully customizable in terms of appearance
- * and positioning.
+ * to open the feedback modal. It automatically adapts to light/dark themes.
  *
  * @param props - Component props
  * @param props.position - Where to position the button (default: "bottom-right")
  * @param props.size - Button size in pixels (default: 60)
- * @param props.backgroundColor - Button background color (default: "#007bff")
+ * @param props.backgroundColor - Button background color (default: automatic based on theme)
  * @param props.textColor - Button text color (default: "white")
  * @param props.text - Button text content (default: "?")
- *
- * @example
- * ```typescript
- * // Basic usage
- * <FeedbackButton />
- *
- * // Customized button
- * <FeedbackButton
- *   position="top-left"
- *   size={80}
- *   backgroundColor="#ff6b6b"
- *   text="💬"
- * />
- * ```
- *
- * @remarks
- * - Requires FeedbackProvider to be present in the component tree
- * - Uses fixed positioning with high z-index (999)
- * - Includes hover animations for better user experience
- * - Fully accessible with proper ARIA labels
+ * @param props.tooltip - Tooltip text (default: "Send Feedback")
  */
 export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
   position = "bottom-right",
   size = 60,
-  backgroundColor = "#007bff",
-  textColor = "white",
+  backgroundColor,
+  textColor,
   text = "?",
+  tooltip = "Send Feedback",
 }) => {
   const { openModal } = useFeedback();
+  const { theme } = useTheme();
+
+  // Use theme-aware colors if not explicitly provided
+  const bgColor = backgroundColor || (theme === "dark" ? "#3b82f6" : "#007bff");
+  const txtColor = textColor || "white";
 
   const getPositionStyles = (): Record<string, string> => {
     const [vertical, horizontal] = position.split("-") as [string, string];
@@ -71,12 +60,13 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
   return (
     <button
       onClick={openModal}
-      aria-label="Open feedback modal"
+      aria-label={tooltip}
+      title={tooltip}
       style={{
         position: "fixed",
         ...getPositionStyles(),
-        backgroundColor,
-        color: textColor,
+        backgroundColor: bgColor,
+        color: txtColor,
         border: "none",
         borderRadius: "50%",
         width: `${size}px`,

@@ -14,6 +14,22 @@ export interface Feedback {
   userAgent?: string;
   /** URL where the feedback was submitted from (if collection is enabled) */
   url?: string;
+  /** Attached files (if any) */
+  attachments?: FeedbackAttachment[];
+  /** User identity information (if collected) */
+  user?: UserIdentity;
+  /** Detailed category information */
+  category?: string;
+  /** Subcategory for more specific classification */
+  subcategory?: string;
+  /** Number of votes/upvotes this feedback has received */
+  votes?: number;
+  /** List of unique identifiers for users who have voted */
+  voters?: string[];
+  /** Submission status for tracking offline submissions */
+  submissionStatus?: 'pending' | 'synced' | 'failed';
+  /** Additional data captured from custom templates */
+  [key: string]: any;
 }
 
 /**
@@ -29,11 +45,23 @@ export interface FeedbackContextType {
   /** Function to close the feedback modal */
   closeModal: () => void;
   /** Function to submit new feedback */
-  submitFeedback: (message: string, type?: Feedback['type']) => Promise<void>;
+  submitFeedback: (
+    message: string, 
+    type?: Feedback['type'], 
+    additionalData?: Record<string, any>
+  ) => Promise<void>;
+  /** Function to upvote existing feedback */
+  voteFeedback: (id: string) => Promise<void>;
   /** Whether feedback is currently being submitted */
   isSubmitting: boolean;
   /** Current error message, if any */
   error: string | null;
+  /** Whether feedback system is in offline mode */
+  isOffline: boolean;
+  /** Function to attempt syncing offline feedback */
+  syncOfflineFeedback: () => Promise<void>;
+  /** All available feedback categories */
+  categories: FeedbackCategory[];
 }
 
 /**
@@ -52,6 +80,36 @@ export interface FeedbackConfig {
   collectUserAgent?: boolean;
   /** Whether to automatically collect the current URL */
   collectUrl?: boolean;
+  /** Theme preference override ('light', 'dark', or 'system') */
+  theme?: ThemePreference;
+  /** Whether to use animations for modal transitions */
+  useAnimations?: boolean;
+  /** Animation timing in milliseconds */
+  animationDuration?: number;
+  /** Template to use for feedback collection */
+  template?: FeedbackTemplate;
+  /** Whether to enable file attachments */
+  enableAttachments?: boolean;
+  /** Maximum number of attachments allowed */
+  maxAttachments?: number;
+  /** Maximum size of each attachment in bytes */
+  maxAttachmentSize?: number;
+  /** Allowed file types for attachments */
+  allowedAttachmentTypes?: string[];
+  /** Whether to collect user identity information */
+  collectUserIdentity?: boolean;
+  /** Required identity fields */
+  requiredIdentityFields?: Array<keyof UserIdentity>;
+  /** Whether to store identity information in local storage */
+  rememberUserIdentity?: boolean;
+  /** Whether to enable offline support */
+  enableOfflineSupport?: boolean;
+  /** Whether to enable voting on feedback items */
+  enableVoting?: boolean;
+  /** Whether to use expanded categories */
+  useExpandedCategories?: boolean;
+  /** Custom categories configuration */
+  categories?: FeedbackCategory[];
 }
 
 /**
@@ -176,4 +234,157 @@ export interface FeedbackModalStyles {
   className?: string;
   /** Custom CSS class name for the overlay */
   overlayClassName?: string;
+  /** Dark mode specific styling overrides */
+  darkMode?: {
+    overlay?: FeedbackModalOverlayStyles;
+    content?: FeedbackModalContentStyles;
+    form?: FeedbackModalFormStyles;
+    buttons?: FeedbackModalButtonStyles;
+    error?: FeedbackModalErrorStyles;
+  }
+}
+
+/**
+ * Theme preference options
+ */
+export type ThemePreference = 'light' | 'dark' | 'system';
+
+/**
+ * Current theme context
+ */
+export interface ThemeContextType {
+  /** Current active theme */
+  theme: 'light' | 'dark';
+  /** Function to toggle between light and dark themes */
+  toggleTheme?: () => void;
+  /** Function to set a specific theme */
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
+}
+
+/**
+ * Animation configuration for modal transitions
+ */
+export interface AnimationConfig {
+  /** Type of entrance animation */
+  enter?: 'fade' | 'slide-up' | 'slide-down' | 'zoom' | 'none';
+  /** Type of exit animation */
+  exit?: 'fade' | 'slide-up' | 'slide-down' | 'zoom' | 'none';
+  /** Duration of animations in milliseconds */
+  duration?: number;
+  /** CSS timing function for animations */
+  easing?: string;
+}
+
+/**
+ * Available feedback template types
+ */
+export type FeedbackTemplate = 'default' | 'bug-report' | 'feature-request' | 'general';
+
+/**
+ * Structure for template fields
+ */
+export interface TemplateField {
+  /** Field identifier */
+  id: string;
+  /** Display label for the field */
+  label: string;
+  /** Type of input field */
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio';
+  /** Whether the field is required */
+  required?: boolean;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Options for select, radio, etc. */
+  options?: Array<{
+    value: string;
+    label: string;
+  }>;
+  /** Default value */
+  defaultValue?: string | boolean | string[];
+  /** Help text */
+  helpText?: string;
+}
+
+/**
+ * Template configuration
+ */
+export interface TemplateConfig {
+  /** Template identifier */
+  id: FeedbackTemplate;
+  /** Template title */
+  title: string;
+  /** Template description */
+  description?: string;
+  /** Fields in the template */
+  fields: TemplateField[];
+}
+
+/**
+ * Represents a file attachment in feedback
+ */
+export interface FeedbackAttachment {
+  /** Unique identifier for the attachment */
+  id: string;
+  /** Filename of the attachment */
+  filename: string;
+  /** MIME type of the file */
+  mimeType: string;
+  /** Size of the file in bytes */
+  size: number;
+  /** File content as Data URL or Blob URL */
+  dataUrl?: string;
+  /** Raw file data as Blob or File object */
+  file?: Blob;
+  /** Preview URL for images */
+  previewUrl?: string;
+  /** Upload status */
+  status?: 'pending' | 'uploading' | 'uploaded' | 'failed';
+  /** Upload progress (0-100) */
+  progress?: number;
+  /** Error message if upload failed */
+  error?: string;
+}
+
+/**
+ * User identity information
+ */
+export interface UserIdentity {
+  /** User's name */
+  name?: string;
+  /** User's email address */
+  email?: string;
+  /** User's ID in the system (if authenticated) */
+  userId?: string;
+  /** Any additional user information */
+  [key: string]: any;
+}
+
+/**
+ * Feedback category with hierarchical structure
+ */
+export interface FeedbackCategory {
+  /** Category identifier */
+  id: string;
+  /** Display name for the category */
+  name: string;
+  /** Optional description of the category */
+  description?: string;
+  /** Optional icon identifier */
+  icon?: string;
+  /** Color associated with this category */
+  color?: string;
+  /** Subcategories within this category */
+  subcategories?: FeedbackSubcategory[];
+}
+
+/**
+ * Subcategory for more detailed feedback classification
+ */
+export interface FeedbackSubcategory {
+  /** Subcategory identifier */
+  id: string;
+  /** Display name for the subcategory */
+  name: string;
+  /** Optional description of the subcategory */
+  description?: string;
 }

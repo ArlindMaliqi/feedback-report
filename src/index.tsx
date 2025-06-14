@@ -14,10 +14,18 @@ export { FeedbackProvider } from "./components/FeedbackProvider";
 export { FeedbackButton } from "./components/FeedbackButton";
 export { FeedbackModal } from "./components/FeedbackModal";
 export { ShakeDetector } from "./components/ShakeDetector";
+export { ThemeProvider } from "./contexts/ThemeContext";
+export { FileAttachmentInput } from "./components/FileAttachmentInput";
+export { UserIdentityFields } from "./components/UserIdentityFields";
+export { CategorySelector } from "./components/CategorySelector";
+export { OfflineIndicator } from "./components/OfflineIndicator";
+export { FeedbackVoteButton } from "./components/FeedbackVoteButton";
+export { FeedbackListItem } from "./components/FeedbackListItem";
 
 // Hooks
 export { useFeedback } from "./hooks/useFeedback";
 export { useShakeDetection } from "./hooks/useShakeDetection";
+export { useTheme } from "./hooks/useTheme";
 
 // Types
 export type {
@@ -31,6 +39,16 @@ export type {
   FeedbackModalFormStyles,
   FeedbackModalButtonStyles,
   FeedbackModalErrorStyles,
+  ThemePreference,
+  ThemeContextType,
+  AnimationConfig,
+  FeedbackTemplate,
+  TemplateField,
+  TemplateConfig,
+  FeedbackAttachment,
+  UserIdentity,
+  FeedbackCategory,
+  FeedbackSubcategory,
 } from "./types";
 
 // Utilities
@@ -40,6 +58,36 @@ export {
   generateId,
   validateFeedback,
 } from "./utils";
+export { getAnimationStyles, generateKeyframes } from "./utils/animations";
+export { 
+  getTemplateById, 
+  getAllTemplates,
+  defaultTemplate,
+  bugReportTemplate,
+  featureRequestTemplate,
+  generalTemplate,
+} from "./utils/templates";
+export {
+  validateAttachment,
+  createAttachment,
+  formatFileSize,
+  captureScreenshot,
+  DEFAULT_ALLOWED_TYPES,
+  DEFAULT_MAX_SIZE,
+} from "./utils/attachmentUtils";
+export {
+  saveFeedbackOffline,
+  getFeedbackFromStorage,
+  isOffline,
+  registerConnectivityListeners,
+} from "./utils/offlineStorage";
+export {
+  defaultCategories,
+  getCategoryById,
+  getSubcategoryById,
+  mapTypeToCategory,
+  getCategoryDisplayName,
+} from "./utils/categories";
 
 // Default component setup for easy integration
 import React from "react";
@@ -47,7 +95,15 @@ import { FeedbackProvider } from "./components/FeedbackProvider";
 import { FeedbackButton } from "./components/FeedbackButton";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { ShakeDetector } from "./components/ShakeDetector";
-import type { FeedbackConfig, FeedbackModalStyles } from "./types";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { OfflineIndicator } from "./components/OfflineIndicator";
+import type { 
+  FeedbackConfig, 
+  FeedbackModalStyles, 
+  ThemePreference,
+  AnimationConfig,
+  FeedbackTemplate
+} from "./types";
 
 /**
  * Props for the FeedbackWidget component
@@ -63,6 +119,14 @@ interface FeedbackWidgetProps {
   buttonProps?: React.ComponentProps<typeof FeedbackButton>;
   /** Custom styling options for the modal */
   modalStyles?: FeedbackModalStyles;
+  /** Initial theme preference */
+  theme?: ThemePreference;
+  /** Animation configuration for the modal */
+  animation?: AnimationConfig;
+  /** Template to use for feedback (default: 'default') */
+  template?: FeedbackTemplate;
+  /** Whether to show offline indicator (default: true when offline support enabled) */
+  showOfflineIndicator?: boolean;
 }
 
 /**
@@ -73,68 +137,6 @@ interface FeedbackWidgetProps {
  * to your application with minimal setup.
  *
  * @param props - Widget configuration props
- * @param props.config - Feedback system configuration
- * @param props.showButton - Whether to display the feedback button
- * @param props.enableShakeDetection - Whether to enable shake-to-feedback
- * @param props.buttonProps - Customization props for the feedback button
- * @param props.modalStyles - Custom styling options for the modal
- *
- * @example
- * ```typescript
- * // Minimal setup
- * function App() {
- *   return (
- *     <div>
- *       <YourAppContent />
- *       <FeedbackWidget />
- *     </div>
- *   );
- * }
- *
- * // Advanced configuration with custom styling
- * function App() {
- *   const feedbackConfig = {
- *     apiEndpoint: '/api/feedback',
- *     collectUserAgent: true,
- *     collectUrl: true
- *   };
- *
- *   const modalStyles = {
- *     content: {
- *       backgroundColor: "#f8f9fa",
- *       borderRadius: "12px",
- *       fontFamily: "Inter, sans-serif"
- *     },
- *     buttons: {
- *       primaryBackgroundColor: "#28a745",
- *       primaryHoverBackgroundColor: "#218838",
- *       buttonBorderRadius: "6px"
- *     }
- *   };
- *
- *   return (
- *     <div>
- *       <YourAppContent />
- *       <FeedbackWidget
- *         config={feedbackConfig}
- *         modalStyles={modalStyles}
- *         buttonProps={{
- *           position: "bottom-left",
- *           backgroundColor: "#ff6b6b",
- *           text: "💬"
- *         }}
- *       />
- *     </div>
- *   );
- * }
- * ```
- *
- * @remarks
- * - Includes FeedbackProvider, so no need to wrap your app separately
- * - Automatically includes modal, button, and shake detection
- * - Highly customizable through props and configuration
- * - Perfect for quick integration with sensible defaults
- * - Supports comprehensive modal styling customization
  */
 export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
   config = {},
@@ -142,13 +144,24 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
   enableShakeDetection = true,
   buttonProps = {},
   modalStyles = {},
+  theme = 'system',
+  animation = { enter: 'fade', exit: 'fade', duration: 300 },
+  template = 'default',
+  showOfflineIndicator = config.enableOfflineSupport,
 }) => {
   return (
-    <FeedbackProvider config={config}>
-      {enableShakeDetection && <ShakeDetector />}
-      {showButton && <FeedbackButton {...buttonProps} />}
-      <FeedbackModal styles={modalStyles} />
-    </FeedbackProvider>
+    <ThemeProvider initialTheme={theme}>
+      <FeedbackProvider config={{ ...config, theme }}>
+        {enableShakeDetection && <ShakeDetector />}
+        {showButton && <FeedbackButton {...buttonProps} />}
+        {showOfflineIndicator && <OfflineIndicator />}
+        <FeedbackModal 
+          styles={modalStyles} 
+          animation={animation}
+          templateId={template}
+        />
+      </FeedbackProvider>
+    </ThemeProvider>
   );
 };
 
