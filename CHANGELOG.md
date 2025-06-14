@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.0...v2.1.1) (2025-06-14)
+
+
+### Bug Fixes
+
+* optimize localization with bundle size reduction ([330c6a0](https://github.com/ArlindMaliqi/feedback-report/commit/330c6a00d5c520a4700f1b09ccf41e27098ebb2d))
+
 # [2.1.0](https://github.com/ArlindMaliqi/feedback-report/compare/v2.0.0...v2.1.0) (2025-06-14)
 
 
