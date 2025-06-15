@@ -176,10 +176,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, initialT
   const value = useMemo<ThemeContextType>(() => ({
     theme,
     systemTheme,
-    isDark: theme === 'dark' || (preference === 'system' && systemTheme === 'dark'),
+    isDark: theme === 'dark',
+    isLight: theme === 'light', // Add missing isLight property
     toggleTheme,
     setTheme
-  }), [theme, systemTheme, preference, toggleTheme, setTheme]);
+  }), [theme, systemTheme, toggleTheme, setTheme]);
 
   return (
     <ThemeContext.Provider value={value}>

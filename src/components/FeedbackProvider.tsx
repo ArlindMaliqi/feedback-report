@@ -153,10 +153,22 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
    * Submits feedback with validation and error handling
    */
   const submitFeedback = useCallback(async (
-    message: string,
+    feedbackOrMessage: Partial<Feedback> | string,
     type: Feedback["type"] = "other",
     additionalData: Record<string, any> = {}
   ): Promise<void> => {
+    // Handle both object and string inputs
+    let message: string;
+    let feedbackData: Partial<Feedback>;
+
+    if (typeof feedbackOrMessage === 'string') {
+      message = feedbackOrMessage;
+      feedbackData = { message, type, ...additionalData };
+    } else {
+      message = feedbackOrMessage.message || '';
+      feedbackData = { type, ...additionalData, ...feedbackOrMessage };
+    }
+
     if (!message.trim()) {
       setError(t('feedback.error.empty'));
       return;
@@ -169,15 +181,15 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       const newFeedback: Feedback = {
         id: generateId(),
         message: message.trim(),
-        type: type || 'other',
+        type: feedbackData.type || 'other',
         timestamp: new Date(),
-        priority: additionalData?.priority || 'medium',
+        priority: feedbackData.priority || 'medium',
         status: 'open',
         votes: 0,
         url: typeof window !== 'undefined' ? window.location.href : '',
         userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
         submissionStatus: isOffline ? 'pending' : 'synced',
-        ...additionalData
+        ...feedbackData
       };
 
       // Validate feedback
@@ -260,32 +272,50 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
 
   // Memoized context values
   const feedbackContextValue: FeedbackContextValue = useMemo(() => ({
-    config: finalConfig,
+    // Core data
+    feedback: feedbacks, // Primary property
+    feedbacks, // Alias for backward compatibility
+    
+    // State
+    isSubmitting,
+    isOnline: !isOffline,
+    isOffline,
     isOpen,
-    openModal,
-    closeModal,
-    submitFeedback,
-    feedbacks,
     loading,
     error,
-    isSubmitting,
-    isOffline,
-    syncOfflineFeedback,
+    
+    // Actions
+    submitFeedback,
     voteFeedback,
+    openModal,
+    closeModal,
+    
+    // Data management
+    pendingCount: feedbacks.filter(f => f.submissionStatus === 'pending').length,
+    syncPendingFeedback: syncOfflineFeedback,
+    syncOfflineFeedback,
+    clearFeedback: () => setFeedbacks([]),
+    getFeedbackById: (id: string) => feedbacks.find(f => f.id === id),
+    updateFeedback: (id: string, updates: Partial<Feedback>) => {
+      setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+    },
+    
+    // Configuration
+    config: finalConfig,
     categories
   }), [
-    finalConfig,
-    isOpen,
-    openModal,
-    closeModal,
-    submitFeedback,
     feedbacks,
-    loading,
-    error,
     isSubmitting,
     isOffline,
-    syncOfflineFeedback,
+    isOpen,
+    loading,
+    error,
+    submitFeedback,
     voteFeedback,
+    openModal,
+    closeModal,
+    syncOfflineFeedback,
+    finalConfig,
     categories
   ]);
 

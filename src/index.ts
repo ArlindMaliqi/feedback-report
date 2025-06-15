@@ -1,40 +1,75 @@
 /**
  * @fileoverview React Feedback Report Widget - Main entry point
  * @module react-feedback-report-widget
- * @version 2.0.0
+ * @version 2.1.3
  * @author ArlindMaliqi
  * @license MIT
  * @since 1.0.0
  */
 
-// Core components
-export { FeedbackProvider } from './contexts/FeedbackContext';
-export { ThemeProvider } from './contexts/ThemeContext';
-
-// Main components
+// Main entry point for the feedback widget package
+export { FeedbackProvider, useFeedback } from './components/FeedbackProvider';
 export { FeedbackButton } from './components/FeedbackButton';
 export { FeedbackModal } from './components/FeedbackModal';
 export { OptimizedFeedbackWidget } from './components/OptimizedFeedbackWidget';
 
-// Hooks
-export { useFeedback } from './hooks/useFeedback';
-export { useTheme } from './hooks/useTheme';
-export { useFeedbackAnalytics } from './hooks/useFeedbackAnalytics';
-export { useFeedbackHistory } from './hooks/useFeedbackHistory';
-export { useShakeDetection } from './hooks/useShakeDetection';
-export { useLocalization } from './hooks/useLocalization';
+// Export all types - only export what actually exists in types
+export type {
+  Feedback,
+  FeedbackConfig,
+  AnalyticsConfig,
+  WebhookConfig,
+  NotificationConfig,
+  IssueTrackerConfig,
+  LocalizationConfig,
+  AnimationConfig,
+  TemplateConfig
+} from './types';
 
-// Utilities
-export * from './utils';
-export * from './utils/validation';
-export * from './utils/categories';
-export * from './utils/templates';
+// Export utility functions
+export {
+  processIntegrations,
+  processVoteIntegrations
+} from './utils/integrations';
 
-// Types
-export type * from './types';
+export {
+  trackFeedbackEvent,
+  trackFeedbackSubmission,
+  trackFeedbackVote,
+  trackModalOpened
+} from './utils/integrations/analytics';
 
-// Integration utilities (tree-shakeable)
-export { processIntegrations, processVoteIntegrations } from './utils/integrations';
+export {
+  showError,
+  showSuccess,
+  showInfo,
+  showWarning,
+  showNotification,
+  NotificationType
+} from './utils/notifications';
 
-// Default export for convenience
-export { OptimizedFeedbackWidget as default } from './components/OptimizedFeedbackWidget';
+// Export templates
+export {
+  DEFAULT_TEMPLATE,
+  BUG_REPORT_TEMPLATE,
+  FEATURE_REQUEST_TEMPLATE,
+  GENERAL_FEEDBACK_TEMPLATE,
+  getTemplateById,
+  getAllTemplates
+} from './utils/templates';
+
+// Export error handling
+export {
+  ErrorTracker,
+  FeedbackErrorBoundary
+} from './utils/errorTracking';
+
+// Export animation utilities
+export {
+  getAnimationStyles,
+  generateKeyframes,
+  DEFAULT_ANIMATION
+} from './utils/animations';
+
+// Version
+export const VERSION = '2.1.3';

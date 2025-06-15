@@ -56,20 +56,32 @@ export const FeedbackProvider: React.FC<LocalFeedbackProviderProps> = ({ childre
   const closeModal = useCallback(() => setIsOpen(false), []);
 
   const submitFeedback = useCallback(async (
-    message: string, 
-    type?: Feedback["type"], 
+    feedbackOrMessage: Partial<Feedback> | string,
+    type?: Feedback["type"],
     additionalData?: Record<string, any>
   ) => {
     setIsSubmitting(true);
     try {
+      // Handle both object and string inputs
+      let message: string;
+      let feedbackData: Partial<Feedback>;
+
+      if (typeof feedbackOrMessage === 'string') {
+        message = feedbackOrMessage;
+        feedbackData = { message, type: type || 'other', ...additionalData };
+      } else {
+        message = feedbackOrMessage.message || '';
+        feedbackData = { type: type || 'other', ...additionalData, ...feedbackOrMessage };
+      }
+
       const feedback: Feedback = {
         id: Date.now().toString(),
         message,
-        type: type || 'other',
+        type: feedbackData.type || 'other',
         timestamp: new Date(),
-        status: 'open', // Add missing status property
+        status: 'open',
         submissionStatus: 'pending',
-        ...additionalData
+        ...feedbackData
       };
 
       if (config?.apiEndpoint) {
@@ -93,17 +105,55 @@ export const FeedbackProvider: React.FC<LocalFeedbackProviderProps> = ({ childre
     }
   }, [config?.apiEndpoint, closeModal]);
 
+  const voteFeedback = useCallback(async (id: string, vote: 'up' | 'down') => {
+    // Stub implementation
+    console.log(`Vote ${vote} on feedback ${id}`);
+  }, []);
+
   const contextValue: FeedbackContextValue = useMemo(() => ({
-    config: config || {},
+    // Core data
+    feedback: feedbacks, // Primary property
+    feedbacks, // Alias for backward compatibility
+    
+    // State
+    isSubmitting,
+    isOnline: true, // Assume online for this context
+    isOffline: false,
     isOpen,
-    openModal,
-    closeModal,
-    submitFeedback,
-    feedbacks,
     loading,
     error,
-    isSubmitting
-  }), [config, isOpen, openModal, closeModal, submitFeedback, feedbacks, loading, error, isSubmitting]);
+    
+    // Actions
+    submitFeedback,
+    voteFeedback,
+    openModal,
+    closeModal,
+    
+    // Data management
+    pendingCount: feedbacks.filter(f => f.submissionStatus === 'pending').length,
+    syncPendingFeedback: async () => { /* stub */ },
+    syncOfflineFeedback: async () => { /* stub */ },
+    clearFeedback: () => setFeedbacks([]),
+    getFeedbackById: (id: string) => feedbacks.find(f => f.id === id),
+    updateFeedback: (id: string, updates: Partial<Feedback>) => {
+      setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+    },
+    
+    // Configuration
+    config: config || {},
+    categories: []
+  }), [
+    feedbacks,
+    isSubmitting,
+    isOpen,
+    loading,
+    error,
+    submitFeedback,
+    voteFeedback,
+    openModal,
+    closeModal,
+    config
+  ]);
 
   const localizationValue: LocalLocalizationContextType = useMemo(() => ({
     t: (key: string) => key,

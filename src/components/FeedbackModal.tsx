@@ -36,7 +36,7 @@ export interface FeedbackModalProps {
   /** Animation configuration */
   animation?: AnimationConfig;
   /** Template ID to use */
-  templateId?: FeedbackTemplate;
+  templateId?: string | FeedbackTemplate; // Allow both string and object
   /** Configuration options */
   config?: FeedbackConfig;
 }
@@ -44,12 +44,13 @@ export interface FeedbackModalProps {
 /**
  * Default template for feedback modal
  */
-const getTemplateById = (templateId: FeedbackTemplate) => {
-  const templates: Record<string, {
-    id: string;
-    name: string;
-    fields: TemplateField[];
-  }> = {
+const getTemplateById = (templateId: string | FeedbackTemplate): FeedbackTemplate => {
+  // If it's already an object, return it
+  if (typeof templateId === 'object' && templateId !== null) {
+    return templateId;
+  }
+  
+  const templates: Record<string, FeedbackTemplate> = {
     default: {
       id: 'default',
       name: 'Default Feedback',
@@ -99,7 +100,7 @@ const getTemplateById = (templateId: FeedbackTemplate) => {
     }
   };
   
-  return templates[templateId] || templates.default;
+  return templates[templateId as string] || templates.default;
 };
 
 /**
