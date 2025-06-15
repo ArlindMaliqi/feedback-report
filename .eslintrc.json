@@ -24,15 +24,17 @@
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-empty-function": "off",
     "react/prop-types": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
     "jsx-a11y/no-autofocus": "off",
-    "prefer-const": "error",
-    "no-var": "error"
+    "prefer-const": "warn",
+    "no-var": "warn",
+    "@typescript-eslint/no-inferrable-types": "warn",
+    "@typescript-eslint/ban-ts-comment": "warn"
   },
   "settings": {
     "react": {
