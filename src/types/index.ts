@@ -1,22 +1,18 @@
 /**
- * Comprehensive type definitions for the feedback widget
+ * Essential type definitions for the feedback widget
  * @module types
  */
 
-// Basic feedback types
+// Core types
 export type FeedbackType = 'bug' | 'feature' | 'improvement' | 'other';
 export type FeedbackStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
 export type FeedbackPriority = 'low' | 'medium' | 'high' | 'critical';
 export type FeedbackSubmissionStatus = 'pending' | 'synced' | 'failed' | 'submitted';
-
-// Theme types
 export type ThemePreference = 'light' | 'dark' | 'system';
-export type FeedbackTheme = ThemePreference;
-
-// Supported locales
+export type FeedbackTheme = ThemePreference; // Alias for backward compatibility
 export type SupportedLocale = 'en' | 'es' | 'fr' | 'de' | 'nl' | 'ar' | 'he';
 
-// User information
+// User interfaces
 export interface User {
   id?: string;
   name?: string;
@@ -24,7 +20,6 @@ export interface User {
   avatar?: string;
 }
 
-// User identity for forms
 export interface UserIdentity {
   name?: string;
   email?: string;
@@ -32,7 +27,7 @@ export interface UserIdentity {
   avatar?: string;
 }
 
-// Categories and subcategories
+// Category interfaces
 export interface Category {
   id: string;
   name: string;
@@ -49,11 +44,11 @@ export interface Subcategory {
   icon?: string;
 }
 
-// Legacy category interfaces for backward compatibility
+// Legacy aliases for backward compatibility
 export interface FeedbackCategory extends Category {}
 export interface FeedbackSubcategory extends Subcategory {}
 
-// File attachments
+// Attachment interfaces
 export interface Attachment {
   id: string;
   name: string;
@@ -68,7 +63,6 @@ export interface Attachment {
   dataUrl?: string;
 }
 
-// Legacy attachment interface for backward compatibility
 export interface FeedbackAttachment extends Attachment {}
 
 // Main feedback interface
@@ -84,12 +78,57 @@ export interface Feedback {
   user?: User;
   url?: string;
   userAgent?: string;
-  attachments?: Attachment[];
   votes?: number;
   votedBy?: string[];
-  metadata?: Record<string, any>;
   submissionStatus?: FeedbackSubmissionStatus;
-  email?: string; // For backward compatibility
+  attachments?: Attachment[];
+  email?: string; // Legacy field
+}
+
+// Template field configuration
+export interface TemplateField {
+  id: string;
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'email' | 'radio' | 'number';
+  label: string;
+  placeholder?: string;
+  required?: boolean;
+  helpText?: string;
+  defaultValue?: string;
+  options?: Array<{ value: string; label: string }>;
+  validation?: {
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+  };
+}
+
+// Template configuration
+export interface TemplateConfig {
+  id: string;
+  name: string;
+  title?: string;
+  description?: string;
+  fields: TemplateField[];
+}
+
+export interface FeedbackTemplate extends TemplateConfig {}
+
+// Animation configuration
+export interface AnimationConfig {
+  enter?: 'fade' | 'slide' | 'slide-up' | 'slide-down' | 'scale' | 'zoom' | 'fadeIn' | 'none';
+  exit?: 'fade' | 'slide' | 'slide-up' | 'slide-down' | 'scale' | 'zoom' | 'fadeOut' | 'none';
+  duration?: number;
+  easing?: string;
+}
+
+// Modal styles
+export interface FeedbackModalStyles {
+  overlay?: React.CSSProperties;
+  modal?: React.CSSProperties;
+  header?: React.CSSProperties;
+  body?: React.CSSProperties;
+  footer?: React.CSSProperties;
+  closeButton?: React.CSSProperties;
 }
 
 // Analytics configuration
@@ -115,7 +154,7 @@ export interface WebhookConfig {
 // Issue tracker configuration
 export interface IssueTrackerConfig {
   provider: 'github' | 'jira' | 'gitlab' | 'azure-devops' | 'custom';
-  apiToken?: string; // Make optional for custom providers
+  apiToken?: string;
   owner?: string;
   repository?: string;
   project?: string;
@@ -126,7 +165,6 @@ export interface IssueTrackerConfig {
   headers?: Record<string, string>;
 }
 
-// Custom issue tracker config for backward compatibility
 export interface CustomIssueTrackerConfig extends IssueTrackerConfig {
   provider: 'custom';
   apiEndpoint: string;
@@ -181,56 +219,6 @@ export interface ThemeConfig {
   customCSS?: string;
 }
 
-// Animation configuration
-export interface AnimationConfig {
-  enter?: 'fade' | 'slide' | 'slide-up' | 'slide-down' | 'scale' | 'zoom' | 'fadeIn' | 'none';
-  exit?: 'fade' | 'slide' | 'slide-up' | 'slide-down' | 'scale' | 'zoom' | 'fadeOut' | 'none';
-  duration?: number;
-  easing?: string;
-}
-
-// Field configuration for templates
-export interface FieldConfig {
-  id: string;
-  type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'email' | 'number';
-  label: string;
-  placeholder?: string;
-  required?: boolean;
-  helpText?: string;
-  defaultValue?: string;
-  options?: Array<{ value: string; label: string }>;
-  validation?: {
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-  };
-}
-
-// Template field for backward compatibility
-export interface TemplateField extends FieldConfig {}
-
-// Template configuration
-export interface TemplateConfig {
-  id: string;
-  name: string;
-  title?: string;
-  description?: string;
-  fields: FieldConfig[];
-}
-
-// Template for backward compatibility
-export interface FeedbackTemplate extends TemplateConfig {}
-
-// Modal styles configuration
-export interface FeedbackModalStyles {
-  overlay?: React.CSSProperties;
-  modal?: React.CSSProperties;
-  header?: React.CSSProperties;
-  body?: React.CSSProperties;
-  footer?: React.CSSProperties;
-  closeButton?: React.CSSProperties;
-}
-
 // Main feedback configuration
 export interface FeedbackConfig {
   // Core settings
@@ -253,13 +241,11 @@ export interface FeedbackConfig {
   rememberUserIdentity?: boolean;
   
   // Appearance
-  theme?: ThemeConfig | string; // Allow both for backward compatibility
+  theme?: ThemeConfig | string;
   animation?: AnimationConfig;
   
-  // Categories
+  // Categories and templates
   categories?: Category[];
-  
-  // Templates
   templates?: TemplateConfig[];
   defaultTemplate?: string;
   
@@ -272,27 +258,22 @@ export interface FeedbackConfig {
   // Localization
   localization?: LocalizationConfig;
   
-  // Privacy
+  // Privacy and security
   privacyPolicyUrl?: string;
   dataRetentionDays?: number;
   anonymizeData?: boolean;
 }
 
-// Context types - Updated with more flexible interfaces
+// Context types
 export interface FeedbackContextValue {
-  // Core feedback data
   feedback: Feedback[];
-  feedbacks?: Feedback[]; // Add alias for backward compatibility
-  
-  // State management
+  feedbacks?: Feedback[];
   isSubmitting: boolean;
   isOnline: boolean;
-  isOffline?: boolean; // Add alias
+  isOffline?: boolean;
   isOpen?: boolean;
   loading?: boolean;
   error?: string | null;
-  
-  // Actions
   submitFeedback: (
     feedbackOrMessage: Partial<Feedback> | string, 
     type?: FeedbackType, 
@@ -301,16 +282,12 @@ export interface FeedbackContextValue {
   voteFeedback: (id: string, type: 'up' | 'down') => Promise<void>;
   openModal?: () => void;
   closeModal?: () => void;
-  
-  // Data management
   pendingCount: number;
   syncPendingFeedback: () => Promise<void>;
-  syncOfflineFeedback?: () => Promise<void>; // Add alias
+  syncOfflineFeedback?: () => Promise<void>;
   clearFeedback: () => void;
   getFeedbackById: (id: string) => Feedback | undefined;
   updateFeedback: (id: string, updates: Partial<Feedback>) => void;
-  
-  // Configuration
   config: FeedbackConfig;
   categories?: Category[];
 }
@@ -319,7 +296,7 @@ export interface FeedbackContextType extends FeedbackContextValue {}
 
 export interface ThemeContextType {
   theme: ThemePreference;
-  systemTheme?: ThemePreference; // Add optional system theme
+  systemTheme?: ThemePreference;
   setTheme: (theme: ThemePreference) => void;
   isDark: boolean;
   isLight: boolean;
@@ -335,11 +312,15 @@ export interface LocalizationContextType {
 
 // Provider props
 export interface FeedbackProviderProps {
-  config: FeedbackConfig;
+  config?: FeedbackConfig; // Make optional for easier testing
   children: React.ReactNode;
+  _testProps?: {
+    mockApiResponse?: any;
+    disableNetworkRequests?: boolean;
+  };
 }
 
-// Component props for legacy compatibility
+// Component props
 export interface OptimizedFeedbackWidgetProps {
   config?: FeedbackConfig;
   theme?: ThemePreference | string;
@@ -348,17 +329,3 @@ export interface OptimizedFeedbackWidgetProps {
   className?: string;
   children?: React.ReactNode;
 }
-
-// Template utilities types
-export interface TemplateRegistry {
-  [key: string]: TemplateConfig;
-  default: TemplateConfig;
-}
-
-// Enhanced submitFeedback function signature options
-export type SubmitFeedbackFunction = {
-  // Option 1: Single object parameter
-  (feedback: Partial<Feedback>): Promise<void>;
-  // Option 2: Legacy three-parameter format
-  (message: string, type?: FeedbackType, additionalData?: Record<string, any>): Promise<void>;
-};

@@ -1,75 +1,62 @@
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
-import terser from '@rollup/plugin-terser';
-import peerDepsExternal from 'rollup-plugin-peer-deps-external';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import { terser } from 'rollup-plugin-terser';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const external = ['react', 'react-dom', 'react/jsx-runtime'];
 
-const baseConfig = {
-  input: 'src/index.ts',
-  external: ['react', 'react-dom'],
-  plugins: [
-    peerDepsExternal(),
-    resolve({
-      browser: true,
-      preferBuiltins: false
-    }),
-    commonjs(),
-    typescript({
-      tsconfig: './tsconfig.json',
-      declaration: true,
-      declarationDir: 'dist',
-      sourceMap: !isProduction
-    })
-  ]
-};
-
-export default [
+const config = [
   // ESM build
   {
-    ...baseConfig,
+    input: 'src/index.ts',
+    external,
     output: {
       file: 'dist/index.esm.js',
       format: 'esm',
-      sourcemap: !isProduction,
-      exports: 'named'
+      sourcemap: true
     },
     plugins: [
-      ...baseConfig.plugins,
-      ...(isProduction ? [terser()] : [])
+      nodeResolve({ preferBuiltins: false }),
+      commonjs(),
+      typescript({
+        declaration: false,
+        declarationMap: false,
+        removeComments: true
+      }),
+      terser({
+        compress: {
+          drop_console: true,
+          drop_debugger: true
+        }
+      })
     ]
   },
-  // CommonJS build
+  // CJS build
   {
-    ...baseConfig,
+    input: 'src/index.ts',
+    external,
     output: {
       file: 'dist/index.js',
       format: 'cjs',
-      sourcemap: !isProduction,
+      sourcemap: true,
       exports: 'named'
     },
     plugins: [
-      ...baseConfig.plugins,
-      ...(isProduction ? [terser()] : [])
-    ]
-  },
-  // UMD build (optional)
-  {
-    ...baseConfig,
-    output: {
-      file: 'dist/index.umd.js',
-      format: 'umd',
-      name: 'ReactFeedbackWidget',
-      globals: {
-        react: 'React',
-        'react-dom': 'ReactDOM'
-      },
-      sourcemap: !isProduction
-    },
-    plugins: [
-      ...baseConfig.plugins,
-      ...(isProduction ? [terser()] : [])
+      nodeResolve({ preferBuiltins: false }),
+      commonjs(),
+      typescript({
+        declaration: false,
+        declarationMap: false,
+        removeComments: true
+      }),
+      terser({
+        compress: {
+          drop_console: true,
+          drop_debugger: true
+        }
+      })
     ]
   }
 ];
+
+export default config;

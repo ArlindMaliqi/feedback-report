@@ -1,0 +1,11 @@
+src/
+examples/
+storybook/
+testing/
+*.test.*
+*.spec.*
+*.stories.*
+rollup.config.js
+tsconfig.json
+.github/
+docs/

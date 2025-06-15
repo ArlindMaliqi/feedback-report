@@ -1,64 +1,121 @@
 /**
- * Testing utilities for the feedback system
+ * Testing utilities for the feedback widget
+ * Framework-agnostic testing helpers that work with any testing library
  * @module testing
- * @version 2.0.0
- * @author ArlindMaliqi
- * @since 1.0.0
  */
-import React, { ReactNode } from 'react';
-import type { FeedbackConfig, Feedback, ThemePreference } from '../types';
 
-/**
- * Props for the test wrapper component
- */
-interface TestWrapperProps {
-  /** Child components to render inside the wrapper */
-  children: ReactNode;
-  /** Mock configuration for the feedback system */
-  mockConfig?: Partial<FeedbackConfig>;
-  /** Initial theme preference */
-  theme?: ThemePreference;
-  /** Initial feedback items to populate the context */
-  initialFeedback?: Feedback[];
-  /** Whether the modal should be open initially */
-  modalOpen?: boolean;
-}
+import {
+  createMockFeedback,
+  createMockConfig,
+  createMockFeedbackProvider,
+  testUtils,
+  frameworkHelpers
+} from './testUtils';
 
-/**
- * Creates a mock feedback object for testing
- */
-export const createMockFeedback = (): Feedback => ({
-  id: 'test-feedback-1',
-  message: 'This is a test feedback',
-  type: 'bug',
-  timestamp: new Date(),
-  votes: 0,
-  status: 'open',
-  priority: 'medium'
-});
-
-/**
- * Creates a mock feedback API response
- */
-export const createMockApiResponse = (success: boolean = true, data?: any) => {
-  return Promise.resolve({
-    ok: success,
-    json: () => Promise.resolve(data || { success }),
-    status: success ? 200 : 400,
-    statusText: success ? 'OK' : 'Bad Request'
-  } as Response);
+// Re-export utilities
+export {
+  createMockFeedback,
+  createMockConfig,
+  createMockFeedbackProvider,
+  frameworkHelpers
 };
 
-/**
- * Mock for testing purposes
- */
-export const mockFeedbackSubmission = () => {
-  return jest.fn().mockResolvedValue({ success: true });
+// Mock implementations without Jest dependencies
+export const mockImplementations = {
+  /**
+   * Creates a mock API response function
+   * @param success - Whether the response should be successful
+   * @returns Mock function that returns a promise
+   */
+  createMockApiResponse: (success = true) => {
+    const mockFn = testUtils.createMockFunction();
+    return mockFn.mockResolvedValue({ success });
+  },
+
+  /**
+   * Creates a mock fetch implementation
+   * @param responses - Array of mock responses
+   */
+  createMockFetch: (responses: any[] = []) => {
+    let callCount = 0;
+    return testUtils.createMockFunction().mockImplementation(() => {
+      const response = responses[callCount] || { success: true };
+      callCount++;
+      return Promise.resolve({
+        ok: response.success !== false,
+        status: response.success !== false ? 200 : 500,
+        json: () => Promise.resolve(response),
+        text: () => Promise.resolve(JSON.stringify(response))
+      });
+    });
+  },
+
+  /**
+   * Creates a mock local storage implementation
+   */
+  createMockLocalStorage: () => {
+    const storage: Record<string, string> = {};
+    return {
+      getItem: (key: string) => storage[key] || null,
+      setItem: (key: string, value: string) => {
+        storage[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete storage[key];
+      },
+      clear: () => {
+        Object.keys(storage).forEach(key => delete storage[key]);
+      },
+      key: (index: number) => Object.keys(storage)[index] || null,
+      get length() {
+        return Object.keys(storage).length;
+      }
+    };
+  }
 };
 
-/**
- * Mock feedback provider for testing
- */
-export const createMockFeedbackProvider = ({ children }: { children: ReactNode }) => {
-  return React.createElement('div', { 'data-testid': 'mock-feedback-provider' }, children);
+// Test utilities without framework dependencies
+export const testHelpers = {
+  /**
+   * Simulates user interaction delay
+   */
+  delay: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
+
+  /**
+   * Creates a mock event
+   */
+  createMockEvent: (type: string, options: any = {}) => ({
+    type,
+    preventDefault: testUtils.createMockFunction(),
+    stopPropagation: testUtils.createMockFunction(),
+    target: { value: '', ...options.target },
+    currentTarget: { value: '', ...options.currentTarget },
+    ...options
+  }),
+
+  /**
+   * Mock window.matchMedia for theme testing
+   */
+  mockMatchMedia: (matches = false) => {
+    const mockFn = testUtils.createMockFunction();
+    mockFn.mockReturnValue = {
+      matches,
+      addListener: testUtils.createMockFunction(),
+      removeListener: testUtils.createMockFunction(),
+      addEventListener: testUtils.createMockFunction(),
+      removeEventListener: testUtils.createMockFunction(),
+      dispatchEvent: testUtils.createMockFunction()
+    };
+    return mockFn;
+  }
 };
+
+// Export a consolidated testing object
+export const feedbackTesting = {
+  mocks: mockImplementations,
+  helpers: testHelpers,
+  utils: testUtils
+};
+
+// Export testUtils directly
+export { testUtils };

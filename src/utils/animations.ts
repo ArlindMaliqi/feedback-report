@@ -105,6 +105,7 @@ export const getAnimationStyles = (
 export const getEnterKeyframes = (type: AnimationConfig['enter']): string => {
   switch (type) {
     case 'fade':
+    case 'fadeIn':
       return 'fadeIn';
     case 'slide':
       return 'slideInUp';
@@ -116,8 +117,6 @@ export const getEnterKeyframes = (type: AnimationConfig['enter']): string => {
       return 'scaleIn';
     case 'zoom':
       return 'zoomIn';
-    case 'fadeIn':
-      return 'fadeIn';
     case 'none':
     default:
       return 'none';
@@ -130,6 +129,7 @@ export const getEnterKeyframes = (type: AnimationConfig['enter']): string => {
 export const getExitKeyframes = (type: AnimationConfig['exit']): string => {
   switch (type) {
     case 'fade':
+    case 'fadeOut':
       return 'fadeOut';
     case 'slide':
       return 'slideOutDown';
@@ -141,8 +141,6 @@ export const getExitKeyframes = (type: AnimationConfig['exit']): string => {
       return 'scaleOut';
     case 'zoom':
       return 'zoomOut';
-    case 'fadeOut':
-      return 'fadeOut';
     case 'none':
     default:
       return 'none';

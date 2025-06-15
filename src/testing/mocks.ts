@@ -1,59 +1,41 @@
 /**
- * Mock utilities for testing feedback components
+ * Mock data and utilities for testing
  * @module testing/mocks
  */
-import type { FeedbackConfig, Feedback, AnalyticsConfig, IssueTrackerConfig } from '../types';
+import type { FeedbackConfig, Feedback } from '../types';
+import { testUtils } from './testUtils';
 
 /**
- * Mock fetch implementation that returns successful responses
- * 
- * @param url - The URL being fetched
- * @param options - Fetch options
- * @returns Promise resolving to a mock Response
+ * Mock successful fetch response
  */
-export const mockSuccessFetch = jest.fn().mockImplementation(
-  (url: string, options?: RequestInit) => {
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ success: true, data: { id: 'mock-id' } }),
-      text: () => Promise.resolve('Success'),
-      headers: new Headers({ 'content-type': 'application/json' })
-    } as Response);
-  }
+export const mockSuccessFetch = testUtils.createMockFunction().mockImplementation(
+  () => Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve({ success: true, id: 'mock-feedback-id' }),
+    text: () => Promise.resolve('{"success": true, "id": "mock-feedback-id"}'),
+    headers: new Map([['content-type', 'application/json']])
+  })
 );
 
 /**
- * Mock fetch implementation that returns error responses
- * 
- * @param url - The URL being fetched
- * @param options - Fetch options
- * @returns Promise resolving to a mock Response
+ * Mock error fetch response
  */
-export const mockErrorFetch = jest.fn().mockImplementation(
-  (url: string, options?: RequestInit) => {
-    return Promise.resolve({
-      ok: false,
-      status: 500,
-      statusText: 'Internal Server Error',
-      json: () => Promise.resolve({ success: false, error: 'Mock error' }),
-      text: () => Promise.resolve('Error'),
-      headers: new Headers({ 'content-type': 'application/json' })
-    } as Response);
-  }
+export const mockErrorFetch = testUtils.createMockFunction().mockImplementation(
+  () => Promise.resolve({
+    ok: false,
+    status: 500,
+    json: () => Promise.resolve({ success: false, error: 'Internal server error' }),
+    text: () => Promise.resolve('{"success": false, "error": "Internal server error"}'),
+    headers: new Map([['content-type', 'application/json']])
+  })
 );
 
 /**
- * Mock fetch implementation that simulates network errors
- * 
- * @param url - The URL being fetched
- * @param options - Fetch options
- * @returns Promise rejecting with a network error
+ * Mock network error
  */
-export const mockNetworkErrorFetch = jest.fn().mockImplementation(
-  (url: string, options?: RequestInit) => {
-    return Promise.reject(new Error('Network error'));
-  }
+export const mockNetworkErrorFetch = testUtils.createMockFunction().mockImplementation(
+  () => Promise.reject(new Error('Network error'))
 );
 
 /**
@@ -209,4 +191,27 @@ export const mockConfig: FeedbackConfig = {
   enableVoting: true,
   categories: [],
   analytics: mockAnalyticsConfig
+};
+
+/**
+ * Setup global mocks for testing environment
+ */
+export const setupGlobalMocks = () => {
+  // Mock fetch globally
+  if (typeof global !== 'undefined') {
+    global.fetch = mockSuccessFetch;
+  } else if (typeof window !== 'undefined') {
+    (window as any).fetch = mockSuccessFetch;
+  }
+};
+
+/**
+ * Cleanup global mocks
+ */
+export const cleanupGlobalMocks = () => {
+  if (typeof global !== 'undefined') {
+    delete (global as any).fetch;
+  } else if (typeof window !== 'undefined') {
+    delete (window as any).fetch;
+  }
 };
