@@ -1,3 +1,10 @@
+## [2.1.4](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.3...v2.1.4) (2025-06-15)
+
+
+### Bug Fixes
+
+* more package type compression changes ([000e169](https://github.com/ArlindMaliqi/feedback-report/commit/000e169d65ec3fdfa32686e556f00ac79707f4c1))
+
 ## [2.1.3](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.2...v2.1.3) (2025-06-15)
 
 
