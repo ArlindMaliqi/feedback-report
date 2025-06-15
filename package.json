@@ -1,6 +1,6 @@
 {
   "name": "react-feedback-report-widget",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "A comprehensive TypeScript-first React feedback widget with shake detection, powerful integrations, analytics, and professional developer experience",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

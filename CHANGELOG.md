@@ -1,3 +1,10 @@
+## [2.1.6](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.5...v2.1.6) (2025-06-15)
+
+
+### Bug Fixes
+
+* improvements, added documentation in issues tracker, notifications, integrations ([1587d31](https://github.com/ArlindMaliqi/feedback-report/commit/1587d315b534d9f4130aabc2a493c55ecc486638))
+
 ## [2.1.5](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.4...v2.1.5) (2025-06-15)
 
 
