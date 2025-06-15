@@ -1,5 +1,5 @@
 /**
- * @fileoverview Optimized localization utilities with tree-shaking support
+ * @fileoverview Optimized localization utilities with Next.js compatibility
  * @module utils/localization
  * @version 2.0.0
  * @author ArlindMaliqi
@@ -9,7 +9,7 @@
 import type { LocalizationConfig } from '../types';
 
 /**
- * Supported locale codes - reduced to requested languages
+ * Supported locale codes
  * @readonly
  */
 export const SUPPORTED_LOCALES = [
@@ -35,13 +35,6 @@ export interface TranslationMap {
 }
 
 /**
- * Locale-specific translations structure
- */
-export interface LocaleTranslations {
-  [locale: string]: TranslationMap;
-}
-
-/**
  * Default English translations (always included to minimize bundle)
  * @readonly
  */
@@ -63,97 +56,108 @@ const DEFAULT_TRANSLATIONS: TranslationMap = {
   'feedback.file.invalidType': 'Invalid file type',
   'feedback.file.upload': 'Upload file',
   'feedback.file.remove': 'Remove file',
-  'feedback.votes.vote': 'Vote',
-  'feedback.votes.voted': 'Voted',
   'feedback.user.name': 'Name',
   'feedback.user.email': 'Email',
-  'feedback.priority.low': 'Low',
-  'feedback.priority.medium': 'Medium',
-  'feedback.priority.high': 'High',
-  'feedback.priority.critical': 'Critical',
   'notification.success': 'Feedback submitted successfully!',
   'notification.error': 'Error occurred',
-  'notification.sync': 'Syncing {count} pending feedback items',
-  'notification.syncComplete': 'All feedback synced successfully',
   'notification.offline': 'Your feedback will be saved and sent when you\'re back online',
-  'notification.deleted': 'Feedback deleted successfully',
-  'notification.deleteError': 'Failed to delete feedback'
+  'validation.messageRequired': 'Message is required'
+};
+
+/**
+ * Extended translations for other locales (embedded to avoid dynamic imports)
+ */
+const LOCALE_TRANSLATIONS: Record<string, TranslationMap> = {
+  'de': {
+    'feedback.title': 'Feedback senden',
+    'feedback.submit': 'Senden',
+    'feedback.cancel': 'Abbrechen',
+    'feedback.placeholder': 'Teilen Sie uns Ihre Gedanken mit...',
+    'feedback.success': 'Vielen Dank für Ihr Feedback!',
+    'feedback.error': 'Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.',
+    'notification.success': 'Feedback erfolgreich gesendet!',
+    'notification.error': 'Fehler aufgetreten'
+  },
+  'es': {
+    'feedback.title': 'Enviar comentarios',
+    'feedback.submit': 'Enviar',
+    'feedback.cancel': 'Cancelar',
+    'feedback.placeholder': 'Cuéntanos qué piensas...',
+    'feedback.success': '¡Gracias por tus comentarios!',
+    'feedback.error': 'Algo salió mal. Por favor, inténtalo de nuevo.',
+    'notification.success': '¡Comentarios enviados exitosamente!',
+    'notification.error': 'Error ocurrido'
+  },
+  'fr': {
+    'feedback.title': 'Envoyer des commentaires',
+    'feedback.submit': 'Envoyer',
+    'feedback.cancel': 'Annuler',
+    'feedback.placeholder': 'Dites-nous ce que vous pensez...',
+    'feedback.success': 'Merci pour vos commentaires!',
+    'feedback.error': 'Quelque chose s\'est mal passé. Veuillez réessayer.',
+    'notification.success': 'Commentaires envoyés avec succès!',
+    'notification.error': 'Erreur survenue'
+  },
+  'nl': {
+    'feedback.title': 'Feedback verzenden',
+    'feedback.submit': 'Verzenden',
+    'feedback.cancel': 'Annuleren',
+    'feedback.placeholder': 'Vertel ons wat je denkt...',
+    'feedback.success': 'Bedankt voor je feedback!',
+    'feedback.error': 'Er ging iets mis. Probeer het opnieuw.',
+    'notification.success': 'Feedback succesvol verzonden!',
+    'notification.error': 'Fout opgetreden'
+  }
 };
 
 /**
  * Determines text direction for a given locale
  * @param locale - The locale code to check
  * @returns Text direction ('ltr' or 'rtl')
- * @since 1.2.0
  */
 export const getDirection = (locale: string): 'ltr' | 'rtl' => {
   return RTL_LOCALES.includes(locale as any) ? 'rtl' : 'ltr';
 };
 
 /**
- * Validates if a locale is supported
- * @param locale - The locale code to validate
- * @returns Whether the locale is supported
- * @since 1.2.0
- */
-export const isValidLocale = (locale: string): locale is SupportedLocale => {
-  return SUPPORTED_LOCALES.includes(locale as SupportedLocale);
-};
-
-/**
- * Gets the fallback locale for unsupported locales
- * @param locale - The requested locale
- * @param fallback - The fallback locale (defaults to 'en')
- * @returns Valid locale code
- * @since 1.2.0
- */
-export const getFallbackLocale = (locale: string, fallback: string = 'en'): SupportedLocale => {
-  if (isValidLocale(locale)) return locale;
-  if (isValidLocale(fallback)) return fallback;
-  return 'en';
-};
-
-/**
  * Interpolates variables in translation strings
- * @param template - Template string with {{variable}} placeholders
+ * @param template - Template string with {variable} placeholders
  * @param values - Object with variable values
  * @returns Interpolated string
- * @since 1.3.0
- * 
- * @example
- * ```typescript
- * interpolate('Hello, {{name}}!', { name: 'John' });
- * // Returns: 'Hello, John!'
- * ```
  */
 export const interpolate = (template: string, values: Record<string, any> = {}): string => {
-  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+  return template.replace(/\{(\w+)\}/g, (match, key) => {
     return values[key] !== undefined ? String(values[key]) : match;
   });
 };
 
 /**
- * Creates a translator function with optimized bundle size
- * Only includes translations for the specified locale to minimize bundle size
- * 
+ * Creates a translator function that always returns a string
  * @param config - Localization configuration
- * @returns Translator function that always returns a string
- * @since 2.0.0
+ * @returns Translator function
  */
 export const createTranslator = (config?: LocalizationConfig) => {
   const locale = config?.locale || 'en';
-  const fallbackLocale = getFallbackLocale(config?.fallbackLocale || 'en');
+  const fallbackLocale = config?.fallbackLocale || 'en';
   
-  // Get translations for the current locale and fallback
-  const currentTranslations = config?.customTranslations?.[locale] || {};
-  const fallbackTranslations = config?.customTranslations?.[fallbackLocale] || {};
-  
-  // Merge translations with priority: current > fallback > default
-  const translations = {
-    ...DEFAULT_TRANSLATIONS,
-    ...fallbackTranslations,
-    ...currentTranslations
+  // Get translations with fallback chain
+  const getTranslations = () => {
+    const base = { ...DEFAULT_TRANSLATIONS };
+    
+    // Add locale-specific translations
+    if (locale !== 'en' && LOCALE_TRANSLATIONS[locale]) {
+      Object.assign(base, LOCALE_TRANSLATIONS[locale]);
+    }
+    
+    // Add custom translations
+    if (config?.customTranslations?.[locale]) {
+      Object.assign(base, config.customTranslations[locale]);
+    }
+    
+    return base;
   };
+
+  const translations = getTranslations();
 
   /**
    * Translate a key with optional interpolation
@@ -168,60 +172,23 @@ export const createTranslator = (config?: LocalizationConfig) => {
 };
 
 /**
- * Lazy loader for translation bundles
- * Only loads translations when needed to optimize initial bundle size
- * 
+ * Load translations for a locale (static version for Next.js compatibility)
  * @param locale - Locale to load
- * @returns Promise with translation map
- * @since 2.0.0
+ * @returns Translation map
  */
 export const loadTranslations = async (locale: SupportedLocale): Promise<TranslationMap> => {
-  // Return empty object if English (already included)
+  // Return English translations if requesting English
   if (locale === 'en') {
     return DEFAULT_TRANSLATIONS;
   }
 
-  try {
-    // Dynamic import for tree-shaking
-    const module = await import(`../locales/${locale}.json`);
-    return module.default || module;
-  } catch (error) {
-    console.warn(`Failed to load translations for locale: ${locale}`, error);
-    return {};
-  }
-};
-
-/**
- * Creates a translation bundle with only required locales
- * This function helps reduce bundle size by only including needed translations
- * 
- * @param locales - Array of required locales
- * @returns Promise with locale-specific translations
- * @since 2.0.0
- */
-export const createTranslationBundle = async (
-  locales: SupportedLocale[]
-): Promise<LocaleTranslations> => {
-  const bundle: LocaleTranslations = {
-    en: DEFAULT_TRANSLATIONS
-  };
-
-  // Load only the required locales - use Array.from to avoid downlevelIteration
-  const uniqueLocales = Array.from(new Set(locales)).filter(locale => locale !== 'en');
-  
-  const loadPromises = uniqueLocales.map(async (locale) => {
-    const translations = await loadTranslations(locale);
-    bundle[locale] = translations;
-  });
-
-  await Promise.all(loadPromises);
-  return bundle;
+  // Return embedded translations to avoid dynamic imports
+  return LOCALE_TRANSLATIONS[locale] || DEFAULT_TRANSLATIONS;
 };
 
 /**
  * Optimized locale detection from browser/system
  * @returns Detected locale code
- * @since 2.0.0
  */
 export const detectLocale = (): SupportedLocale => {
   if (typeof window === 'undefined') return 'en';
@@ -229,18 +196,7 @@ export const detectLocale = (): SupportedLocale => {
   const browserLocale = window.navigator.language || 'en';
   const shortLocale = browserLocale.split('-')[0];
   
-  return getFallbackLocale(shortLocale);
-};
-
-/**
- * Bundle size estimation utility
- * @param locales - Array of locales to estimate
- * @returns Estimated bundle size impact in bytes
- * @since 2.0.0
- */
-export const estimateBundleSize = (locales: SupportedLocale[]): number => {
-  // Rough estimation: 2KB per additional locale
-  const baseSize = 1500; // English baseline
-  const additionalLocales = locales.filter(locale => locale !== 'en').length;
-  return baseSize + (additionalLocales * 2000);
+  return SUPPORTED_LOCALES.includes(shortLocale as SupportedLocale) 
+    ? shortLocale as SupportedLocale 
+    : 'en';
 };

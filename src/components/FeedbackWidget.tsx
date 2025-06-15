@@ -10,19 +10,8 @@ import type { FeedbackWidgetProps, ThemePreference } from '../types';
 /**
  * Complete Feedback Widget with all features
  * 
- * Features included:
- * - All template types (bug report, feature request, general)
- * - Shake detection support
- * - Offline support with sync
- * - File attachments
- * - User identity collection
- * - Voting system
- * - Analytics integration
- * - Issue tracker integration
- * - Notifications
- * - Localization
- * - Custom theming
- * - Accessibility features
+ * This is the main widget component that provides full functionality
+ * including offline support, file attachments, voting, and integrations.
  */
 export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
   config,
@@ -61,6 +50,13 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
     dataRetentionDays: 365,
     anonymizeData: false,
     
+    // Localization - provide default to avoid context errors
+    localization: {
+      locale: 'en' as const,
+      fallbackLocale: 'en' as const,
+      rtl: false
+    },
+    
     // Merge user config
     ...config
   };
@@ -76,8 +72,8 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
         {children}
         <FeedbackButton />
         <FeedbackModal 
-          isOpen={false} 
-          onClose={() => {}} 
+          isOpen={false}
+          onClose={() => {}}
           onSubmit={async () => {}}
           config={mergedConfig}
         />

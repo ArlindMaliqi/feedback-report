@@ -5,10 +5,15 @@
 
 // Core components (tree-shakeable)
 export { FeedbackProvider } from './components/FeedbackProvider';
+export { FeedbackWidget } from './components/FeedbackWidget';
 export { useFeedback } from './hooks/useFeedback';
 export { FeedbackButton } from './components/FeedbackButton';
 export { FeedbackModal } from './components/FeedbackModal';
 export { OptimizedFeedbackWidget } from './components/OptimizedFeedbackWidget';
+export { MinimalFeedbackWidget } from './components/MinimalFeedbackWidget';
+
+// Contexts
+export { ThemeProvider } from './contexts/ThemeContext';
 
 // Essential types only
 export type {
@@ -28,11 +33,18 @@ export type {
   FeedbackAttachment,
   AnalyticsConfig,
   WebhookConfig,
-  NotificationConfig
+  NotificationConfig,
+  FeedbackWidgetProps,
+  FeedbackButtonProps,
+  FeedbackModalProps,
+  OptimizedFeedbackWidgetProps
 } from './types';
 
 // Essential utilities (lazy-loaded)
 export { showError, showSuccess, showInfo, showWarning } from './utils/notifications';
 
+// Localization utilities
+export { createTranslator, getDirection } from './utils/localization';
+
 // Version
-export const VERSION = '2.1.3';
+export const VERSION = '2.1.6';

@@ -20,8 +20,8 @@ export { useFeedback } from './hooks/useFeedback';
 export { useTheme } from './hooks/useTheme';
 
 // Contexts
-export { FeedbackContext, ThemeContext, LocalizationContext } from './contexts/FeedbackContext';
-export { ThemeProvider } from './contexts/ThemeContext';
+export { FeedbackContext, LocalizationContext } from './contexts/FeedbackContext';
+export { ThemeProvider, ThemeContext } from './contexts/ThemeContext';
 
 // Types - Complete Set
 export type {
