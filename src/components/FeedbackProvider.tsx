@@ -7,11 +7,12 @@ import React, {
   useCallback, 
   useEffect, 
   useMemo, 
-  ReactNode
+  ReactNode, 
+  useContext 
 } from 'react';
 import type { 
   Feedback, 
-  FeedbackConfig, 
+  FeedbackConfig as BaseFeedbackConfig, 
   FeedbackContextValue, 
   LocalizationContextType 
 } from '../types';
@@ -28,13 +29,27 @@ export interface FeedbackProviderProps {
   /** Child components that will have access to the feedback context */
   children: ReactNode;
   /** Configuration options for the feedback system */
-  config?: FeedbackConfig;
+  config?: BaseFeedbackConfig;
   /** Test props for mocking behavior in test environments (internal use only) */
   _testProps?: {
     mockApiResponse?: any;
     disableNetworkRequests?: boolean;
   };
 }
+
+const DEFAULT_CONFIG: Partial<BaseFeedbackConfig> = {
+  enableShakeDetection: false,
+  theme: 'system',
+  enableOfflineSupport: false,
+  collectUserAgent: false,
+  collectUrl: false,
+  maxAttachments: 3,
+  allowedAttachmentTypes: ['image/png', 'image/jpeg', 'image/gif'],
+  requiredIdentityFields: [],
+  rememberUserIdentity: false,
+  enableVoting: false,
+  categories: []
+};
 
 /**
  * Enhanced FeedbackProvider with comprehensive feedback management
@@ -46,14 +61,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
 }) => {
   // Memoize the final configuration
   const finalConfig = useMemo(() => ({
-    theme: 'system' as const,
-    enableShakeDetection: false,
-    enableOfflineSupport: false,
-    enableVoting: false,
-    collectUserIdentity: false,
-    enableFileAttachments: true,
-    maxFileSize: 5 * 1024 * 1024,
-    categories: DEFAULT_CATEGORIES,
+    ...DEFAULT_CONFIG,
     ...initialConfig
   }), [initialConfig]);
 
@@ -207,7 +215,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
   /**
    * Handles voting on feedback
    */
-  const voteFeedback = useCallback(async (id: string): Promise<void> => {
+  const voteFeedback = useCallback(async (id: string, vote: 'up' | 'down' = 'up'): Promise<void> => {
     if (!finalConfig.enableVoting) return;
 
     try {
@@ -215,7 +223,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
         const response = await fetch(`${finalConfig.apiEndpoint}/vote`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ feedbackId: id })
+          body: JSON.stringify({ feedbackId: id, vote })
         });
 
         const result = await handleApiResponse(response);
@@ -245,31 +253,6 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     }
   }, [finalConfig.enableVoting, finalConfig.apiEndpoint, isOffline, t]);
 
-  /**
-   * Deletes feedback
-   */
-  const deleteFeedback = useCallback(async (id: string): Promise<void> => {
-    try {
-      let success = true;
-      
-      if (!isOffline && finalConfig.apiEndpoint) {
-        const response = await fetch(`${finalConfig.apiEndpoint}/${id}`, {
-          method: 'DELETE'
-        });
-        success = response.ok;
-      }
-      
-      if (success) {
-        setFeedbacks(prev => prev.filter(f => f.id !== id));
-        showSuccess(t('notification.deleted'));
-      } else {
-        showError(t('notification.deleteError'));
-      }
-    } catch (error) {
-      showError(t('notification.deleteError'));
-    }
-  }, [isOffline, finalConfig.apiEndpoint, t]);
-
   // Get categories from config
   const categories = useMemo(() => {
     return finalConfig.categories || DEFAULT_CATEGORIES || [];
@@ -289,7 +272,6 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     isOffline,
     syncOfflineFeedback,
     voteFeedback,
-    deleteFeedback,
     categories
   }), [
     finalConfig,
@@ -304,7 +286,6 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     isOffline,
     syncOfflineFeedback,
     voteFeedback,
-    deleteFeedback,
     categories
   ]);
 
@@ -321,6 +302,14 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       </FeedbackContext.Provider>
     </LocalizationContext.Provider>
   );
+};
+
+export const useFeedback = () => {
+  const context = useContext(FeedbackContext);
+  if (!context) {
+    throw new Error('useFeedback must be used within a FeedbackProvider');
+  }
+  return context;
 };
 
 export default FeedbackProvider;

@@ -42,16 +42,15 @@ export const RemixFeedback: React.FC = () => {
     collectUserIdentity: true,
     enableFileAttachments: true,
     maxFileSize: 10 * 1024 * 1024,
-    // Removed additionalData - not a valid config property
     
-    // Use Remix's route to handle issue creation - using CustomIssueTrackerConfig
+    // Use Remix's route to handle issue creation
     issueTracker: {
       provider: 'custom',
       apiEndpoint: '/api/feedback/create-issue',
       headers: {
         'Content-Type': 'application/json'
       }
-    } as CustomIssueTrackerConfig
+    }
   };
   
   return (

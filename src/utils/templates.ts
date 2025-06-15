@@ -6,29 +6,27 @@ import type { TemplateConfig } from '../types';
 export const DEFAULT_TEMPLATE: TemplateConfig = {
   id: 'default',
   name: 'Default Feedback',
-  title: 'Send Feedback',
-  description: 'General feedback form',
+  description: 'A simple feedback form for general comments',
   fields: [
     {
+      id: 'message',
+      type: 'textarea',
+      label: 'Your Feedback',
+      placeholder: 'Please describe your feedback...',
+      required: true,
+      helpText: 'Please be as specific as possible.'
+    },
+    {
       id: 'type',
-      label: 'Type',
       type: 'select',
+      label: 'Feedback Type',
       required: true,
       options: [
         { value: 'bug', label: 'Bug Report' },
         { value: 'feature', label: 'Feature Request' },
         { value: 'improvement', label: 'Improvement' },
         { value: 'other', label: 'Other' }
-      ],
-      defaultValue: 'other'
-    },
-    {
-      id: 'message',
-      label: 'Message',
-      type: 'textarea',
-      required: true,
-      placeholder: 'Please describe your feedback...',
-      helpText: 'Please be as specific as possible.'
+      ]
     }
   ]
 };
@@ -39,60 +37,58 @@ export const DEFAULT_TEMPLATE: TemplateConfig = {
 export const BUG_REPORT_TEMPLATE: TemplateConfig = {
   id: 'bug-report',
   name: 'Bug Report',
-  title: 'Report a Bug',
-  description: 'Report bugs and issues',
+  description: 'Report a problem or issue',
   fields: [
     {
       id: 'title',
-      label: 'Bug Title',
       type: 'text',
+      label: 'Bug Title',
+      placeholder: 'Brief description of the bug',
       required: true,
-      placeholder: 'Short description of the issue',
       helpText: 'Provide a concise title for this bug.'
     },
     {
-      id: 'steps',
-      label: 'Steps to Reproduce',
+      id: 'description',
       type: 'textarea',
+      label: 'Bug Description',
+      placeholder: 'Detailed description of the issue...',
       required: true,
-      placeholder: '1. Click on...\n2. Navigate to...\n3. Observe that...',
       helpText: 'List the exact steps needed to reproduce the issue.'
     },
     {
       id: 'expected',
-      label: 'Expected Behavior',
       type: 'textarea',
-      required: true,
+      label: 'Expected Behavior',
       placeholder: 'What should have happened?',
+      required: false,
       helpText: 'Describe what you expected to happen.'
     },
     {
       id: 'actual',
-      label: 'Actual Behavior',
       type: 'textarea',
-      required: true,
+      label: 'Actual Behavior',
       placeholder: 'What actually happened?',
+      required: false,
       helpText: 'Describe what actually happened instead.'
     },
     {
-      id: 'severity',
-      label: 'Severity',
+      id: 'priority',
       type: 'select',
-      required: true,
+      label: 'Priority',
+      required: false,
       options: [
         { value: 'critical', label: 'Critical - Application crashes or data loss' },
         { value: 'high', label: 'High - Major functionality broken' },
         { value: 'medium', label: 'Medium - Feature partially working' },
         { value: 'low', label: 'Low - Minor or cosmetic issue' }
-      ],
-      defaultValue: 'medium'
+      ]
     },
     {
-      id: 'additional',
-      label: 'Additional Information',
+      id: 'environment',
       type: 'textarea',
+      label: 'Environment Details',
+      placeholder: 'Browser, OS, device information...',
       required: false,
-      placeholder: 'Any other details that might help us fix the issue',
       helpText: 'Browser version, device type, screenshots, etc.'
     }
   ]

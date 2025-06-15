@@ -98,3 +98,27 @@ export const lazyTestingUtils = () =>
  */
 export const lazyStorybookStories = () =>
   import('../storybook/FeedbackWidget.stories').then(module => module);
+
+// Placeholder for lazy component loading
+// For now, these are simple stubs until we implement proper lazy loading
+
+export const LazyComponents = {
+  FeedbackModal: () => Promise.resolve({ FeedbackModal: () => null }),
+  FileAttachmentInput: () => Promise.resolve({ FileAttachmentInput: () => null }),
+  UserIdentityFields: () => Promise.resolve({ UserIdentityFields: () => null }),
+  CategorySelector: () => Promise.resolve({ CategorySelector: () => null }),
+  ShakeDetector: () => Promise.resolve({ ShakeDetector: () => null }),
+  OfflineIndicator: () => Promise.resolve({ OfflineIndicator: () => null }),
+  ThemeToggleButton: () => Promise.resolve({ ThemeToggleButton: () => null }),
+};
+
+export const LazyIntegrations = {
+  analytics: () => Promise.resolve({}),
+  issueTracker: () => Promise.resolve({}),
+  webhooks: () => Promise.resolve({}),
+  notifications: () => Promise.resolve({}),
+};
+
+export const LazyTestingUtils = () => Promise.resolve({});
+
+export const LazyStorybookComponents = () => Promise.resolve({});

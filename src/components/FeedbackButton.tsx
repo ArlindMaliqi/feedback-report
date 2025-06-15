@@ -5,19 +5,15 @@ import { useTheme } from "../hooks/useTheme";
 /**
  * Props for the FeedbackButton component
  */
-interface FeedbackButtonProps {
+export interface FeedbackButtonProps {
   /** Position of the button on screen */
   position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
-  /** Size of the button in pixels */
-  size?: number;
-  /** Background color of the button */
-  backgroundColor?: string;
-  /** Text color of the button */
-  textColor?: string;
   /** Text to display inside the button */
-  text?: string;
-  /** Tooltip text (default: "Send Feedback") */
-  tooltip?: string;
+  label?: string;
+  /** Size of the button */
+  size?: "small" | "medium" | "large";
+  /** Click event handler */
+  onClick?: () => void;
 }
 
 /**
@@ -28,26 +24,22 @@ interface FeedbackButtonProps {
  *
  * @param props - Component props
  * @param props.position - Where to position the button (default: "bottom-right")
- * @param props.size - Button size in pixels (default: 60)
- * @param props.backgroundColor - Button background color (default: automatic based on theme)
- * @param props.textColor - Button text color (default: "white")
- * @param props.text - Button text content (default: "?")
- * @param props.tooltip - Tooltip text (default: "Send Feedback")
+ * @param props.label - Button text content (default: "Feedback")
+ * @param props.size - Button size (default: "medium")
+ * @param props.onClick - Click event handler
  */
 export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
   position = "bottom-right",
-  size = 60,
-  backgroundColor,
-  textColor,
-  text = "?",
-  tooltip = "Send Feedback",
+  label = "Feedback",
+  size = "medium",
+  onClick,
 }) => {
   const { openModal } = useFeedback();
   const { theme } = useTheme();
 
   // Use theme-aware colors if not explicitly provided
-  const bgColor = backgroundColor || (theme === "dark" ? "#3b82f6" : "#007bff");
-  const txtColor = textColor || "white";
+  const bgColor = "#007bff";
+  const txtColor = "white";
 
   const getPositionStyles = (): Record<string, string> => {
     const [vertical, horizontal] = position.split("-") as [string, string];
@@ -57,11 +49,24 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
     };
   };
 
+  const getSizeStyles = () => {
+    switch (size) {
+      case "small":
+        return { width: "48px", height: "48px", fontSize: "14px" };
+      case "large":
+        return { width: "64px", height: "64px", fontSize: "18px" };
+      default:
+        return { width: "56px", height: "56px", fontSize: "16px" };
+    }
+  };
+
+  const sizeStyles = getSizeStyles();
+
   return (
     <button
-      onClick={openModal}
-      aria-label={tooltip}
-      title={tooltip}
+      onClick={onClick || openModal}
+      aria-label={label}
+      title={label}
       style={{
         position: "fixed",
         ...getPositionStyles(),
@@ -69,28 +74,24 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
         color: txtColor,
         border: "none",
         borderRadius: "50%",
-        width: `${size}px`,
-        height: `${size}px`,
-        fontSize: `${size * 0.4}px`,
-        fontWeight: "bold",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
         cursor: "pointer",
-        zIndex: 999,
-        transition: "all 0.2s ease",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+        zIndex: 1000,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        ...sizeStyles,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "scale(1.1)";
-        e.currentTarget.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.2)";
+        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "scale(1)";
-        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+        e.currentTarget.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.2)";
       }}
     >
-      {text}
+      💬
     </button>
   );
 };

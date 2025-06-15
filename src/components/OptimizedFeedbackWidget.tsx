@@ -55,7 +55,7 @@ const LazyOfflineIndicator = lazy(() =>
  * Configuration properties for the OptimizedFeedbackWidget component
  * @interface OptimizedFeedbackWidgetProps
  */
-interface OptimizedFeedbackWidgetProps {
+export interface OptimizedFeedbackWidgetProps {
   /** Configuration options for the feedback system */
   config?: FeedbackConfig;
   /** Whether to show the floating feedback button */
@@ -248,13 +248,13 @@ class LazyComponentErrorBoundary extends React.Component<
 export const OptimizedFeedbackWidget: React.FC<OptimizedFeedbackWidgetProps> = ({
   config = {},
   showButton = true,
-  enableShakeDetection = true,
-  buttonProps = {},
-  modalStyles = {},
+  enableShakeDetection = false,
+  buttonProps,
+  modalStyles,
   theme = 'system',
-  animation = { enter: 'fade', exit: 'fade', duration: 300 },
-  template = 'default',
-  showOfflineIndicator = config.enableOfflineSupport,
+  animation,
+  template,
+  showOfflineIndicator,
   loadingFallback,
   errorFallback
 }) => {

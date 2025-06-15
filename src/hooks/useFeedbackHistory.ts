@@ -147,7 +147,7 @@ export function useFeedbackHistory(options: FeedbackHistoryOptions = {}) {
     getByStatus,
     getByType,
     pendingItems: getByStatus('pending'),
-    syncedItems: getByStatus('synced'),
+    syncedItems: getByStatus('submitted'), // Fix: use 'submitted' instead of 'synced'
     failedItems: getByStatus('failed')
   };
 }

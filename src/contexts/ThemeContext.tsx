@@ -172,12 +172,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, initialT
   }, []);
 
   // Memoize context value to prevent unnecessary re-renders
+  const systemTheme = getSystemTheme();
   const value = useMemo<ThemeContextType>(() => ({
     theme,
-    systemTheme: getSystemTheme(),
+    systemTheme,
+    isDark: theme === 'dark' || (preference === 'system' && systemTheme === 'dark'),
     toggleTheme,
     setTheme
-  }), [theme, toggleTheme, setTheme]);
+  }), [theme, systemTheme, preference, toggleTheme, setTheme]);
 
   return (
     <ThemeContext.Provider value={value}>

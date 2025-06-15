@@ -53,7 +53,7 @@ interface LocalizationHookReturn {
  * @returns Localization utilities and state
  * @since 2.0.0
  */
-export const useLocalization = (options: UseLocalizationOptions = {}): LocalizationHookReturn => {
+export const useLocalization = (options: UseLocalizationOptions = { locale: 'en' }): LocalizationHookReturn => {
   const {
     locale: initialLocale,
     fallbackLocale = 'en',

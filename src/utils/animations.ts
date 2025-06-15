@@ -3,11 +3,11 @@ import type { AnimationConfig } from '../types';
 /**
  * Default animation configuration
  */
-const defaultAnimationConfig: Required<AnimationConfig> = {
-  enter: 'fadeIn',
-  exit: 'fadeOut',
+export const DEFAULT_ANIMATION: Required<AnimationConfig> = {
+  enter: 'fade',
+  exit: 'fade',
   duration: 300,
-  easing: 'cubic-bezier(0.4, 0, 0.2, 1)' // Now properly defined in AnimationConfig
+  easing: 'ease-in-out'
 };
 
 /**
@@ -73,10 +73,10 @@ export const generateKeyframes = () => {
  * @returns CSS style object
  */
 export const getAnimationStyles = (
-  animation: AnimationConfig = defaultAnimationConfig,
+  animation: AnimationConfig = DEFAULT_ANIMATION,
   isVisible: boolean = false
 ): React.CSSProperties => {
-  const { enter, exit, duration, easing } = { ...defaultAnimationConfig, ...animation };
+  const { enter, exit, duration, easing } = { ...DEFAULT_ANIMATION, ...animation };
   
   if (!isVisible && exit === 'none') {
     return { display: 'none' };
@@ -90,8 +90,8 @@ export const getAnimationStyles = (
   generateKeyframes();
   
   const animationName = isVisible
-    ? getEnterAnimationName(enter)
-    : getExitAnimationName(exit);
+    ? getEnterKeyframes(enter)
+    : getExitKeyframes(exit);
   
   return {
     animation: `${animationName} ${duration}ms ${easing}`,
@@ -102,33 +102,58 @@ export const getAnimationStyles = (
 /**
  * Gets the enter animation name based on type
  */
-function getEnterAnimationName(type: AnimationConfig['enter'] = 'fade'): string {
+export const getEnterKeyframes = (type: AnimationConfig['enter']): string => {
   switch (type) {
-    case 'slide-up':
-      return 'feedback-slide-up-in';
-    case 'slide-down':
-      return 'feedback-slide-down-in';
-    case 'zoom':
-      return 'feedback-zoom-in';
     case 'fade':
+      return 'fadeIn';
+    case 'slide':
+      return 'slideInUp';
+    case 'slide-up':
+      return 'slideInUp';
+    case 'slide-down':
+      return 'slideInDown';
+    case 'scale':
+      return 'scaleIn';
+    case 'zoom':
+      return 'zoomIn';
+    case 'fadeIn':
+      return 'fadeIn';
+    case 'none':
     default:
-      return 'feedback-fade-in';
+      return 'none';
   }
-}
+};
 
 /**
  * Gets the exit animation name based on type
  */
-function getExitAnimationName(type: AnimationConfig['exit'] = 'fade'): string {
+export const getExitKeyframes = (type: AnimationConfig['exit']): string => {
   switch (type) {
-    case 'slide-up':
-      return 'feedback-slide-up-out';
-    case 'slide-down':
-      return 'feedback-slide-down-out';
-    case 'zoom':
-      return 'feedback-zoom-out';
     case 'fade':
+      return 'fadeOut';
+    case 'slide':
+      return 'slideOutDown';
+    case 'slide-up':
+      return 'slideOutUp';
+    case 'slide-down':
+      return 'slideOutDown';
+    case 'scale':
+      return 'scaleOut';
+    case 'zoom':
+      return 'zoomOut';
+    case 'fadeOut':
+      return 'fadeOut';
+    case 'none':
     default:
-      return 'feedback-fade-out';
+      return 'none';
   }
-}
+};
+
+/**
+ * Gets the animation name for enter or exit based on visibility
+ */
+export const getAnimationName = (enter?: string, exit?: string): string => {
+  return enter 
+    ? getEnterKeyframes(enter as AnimationConfig['enter'])
+    : getExitKeyframes(exit as AnimationConfig['exit']);
+};

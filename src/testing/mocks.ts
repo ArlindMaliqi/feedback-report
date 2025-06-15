@@ -95,21 +95,32 @@ export const createMockAnalyticsConfig = (overrides: Partial<AnalyticsConfig> = 
  * @param overrides - Properties to override in the default configuration
  * @returns Mock feedback configuration
  */
-export const createMockFeedbackConfig = (overrides: Partial<FeedbackConfig> = {}): FeedbackConfig => {
-  return {
-    apiEndpoint: 'http://localhost/mock-api',
-    enableOfflineSupport: true,
-    enableVoting: true,
-    collectUserAgent: false,
-    // Remove collectUrl - not a valid property
-    enableFileAttachments: true, // Fixed: use enableFileAttachments instead of enableAttachments
-    maxAttachments: 3,
-    analytics: createMockAnalyticsConfig(),
-    issueTracker: createMockIssueTrackerConfig(),
-    isTestEnvironment: true,
-    ...overrides
-  };
-};
+export const createMockConfig = (overrides: Partial<FeedbackConfig> = {}): FeedbackConfig => ({
+  apiEndpoint: '/api/feedback',
+  theme: 'system',
+  enableShakeDetection: false,
+  enableOfflineSupport: true,
+  collectUserAgent: true,
+  collectUrl: true,
+  enableVoting: true,
+  enableFileAttachments: true,
+  maxAttachments: 5,
+  maxFileSize: 10 * 1024 * 1024,
+  allowedAttachmentTypes: ['image/*', 'application/pdf'],
+  categories: [
+    {
+      id: 'bug',
+      name: 'Bug Report',
+      description: 'Report a problem'
+    },
+    {
+      id: 'feature',
+      name: 'Feature Request',
+      description: 'Suggest a new feature'
+    }
+  ],
+  ...overrides
+});
 
 /**
  * Mocks the localStorage API for testing

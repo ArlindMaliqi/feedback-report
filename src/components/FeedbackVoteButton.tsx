@@ -75,7 +75,7 @@ export const FeedbackVoteButton: React.FC<FeedbackVoteButtonProps> = ({
         return;
       }
       
-      await voteFeedback(feedbackId);
+      await voteFeedback(feedbackId, 'up');
     } catch (error) {
       console.error('Error voting for feedback:', error);
     } finally {
