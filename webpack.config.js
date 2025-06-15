@@ -5,139 +5,167 @@
  */
 
 const path = require('path');
-const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const CompressionPlugin = require('compression-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
-// Determine environment - default to 'development' if not set
-const nodeEnv = process.env.NODE_ENV || 'development';
-const isProduction = nodeEnv === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
+const shouldCompress = process.env.COMPRESS === 'true';
 const shouldAnalyze = process.env.ANALYZE === 'true';
-const shouldCompress = process.env.COMPRESS === 'true' && isProduction;
 
-const createConfig = (format = 'umd') => {
-  const isESM = format === 'esm';
-  
-  return {
-    mode: isProduction ? 'production' : 'development',
-    entry: './src/index.ts',
-    output: {
-      path: path.resolve(__dirname, 'dist'),
-      filename: isESM ? 'index.esm.js' : 'index.js',
-      library: isESM ? undefined : {
-        name: 'ReactFeedbackReportWidget',
-        type: 'umd',
-      },
-      libraryTarget: isESM ? 'module' : 'umd',
-      umdNamedDefine: !isESM,
-      globalObject: 'typeof self !== "undefined" ? self : this',
-      clean: false,
-      ...(isESM && {
-        environment: { module: true },
-        chunkFormat: 'module',
-      }),
+const baseConfig = {
+  entry: './src/index.ts',
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
     },
-    ...(isESM && {
-      experiments: {
-        outputModule: true,
-      },
-    }),
-    resolve: {
-      extensions: ['.ts', '.tsx', '.js', '.jsx'],
-      alias: {
-        '@': path.resolve(__dirname, 'src'),
-      },
-    },
-    module: {
-      rules: [
-        {
-          test: /\.(ts|tsx)$/,
-          exclude: /node_modules/,
-          use: {
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(ts|tsx)$/,
+        use: [
+          {
             loader: 'babel-loader',
             options: {
               presets: [
-                ['@babel/preset-env', { 
-                  targets: { node: 'current' },
-                  modules: isESM ? false : 'auto'
-                }],
-                ['@babel/preset-react', { runtime: 'automatic' }],
+                ['@babel/preset-env', { targets: { node: 'current' } }],
+                '@babel/preset-react',
                 '@babel/preset-typescript',
               ],
             },
           },
+        ],
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+    ],
+  },
+  plugins: [
+    ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
+  ],
+};
+
+module.exports = (env = {}) => {
+  const format = env.format || 'umd';
+  
+  if (format === 'esm') {
+    return {
+      ...baseConfig,
+      externalsType: 'module',
+      externals: {
+        'react': 'react',
+        'react-dom': 'react-dom',
+      },
+      output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: shouldCompress ? 'index.esm.min.js' : 'index.esm.js',
+        library: {
+          type: 'module',
         },
-        {
-          test: /\.css$/,
-          use: ['style-loader', 'css-loader'],
+        environment: {
+          module: true,
         },
+        chunkFormat: 'module',
+      },
+      experiments: {
+        outputModule: true,
+      },
+      optimization: {
+        minimize: shouldCompress,
+        minimizer: shouldCompress ? [
+          new TerserPlugin({
+            terserOptions: {
+              compress: {
+                drop_console: true,
+                drop_debugger: true,
+              },
+              mangle: true,
+              format: {
+                comments: false,
+              },
+            },
+            extractComments: false,
+          }),
+        ] : [],
+        // Disable hash generation for ESM externals to avoid the error
+        moduleIds: 'named',
+        chunkIds: 'named',
+      },
+      devtool: shouldCompress ? false : 'source-map',
+      plugins: [
+        ...baseConfig.plugins,
+        ...(shouldCompress ? [
+          new CompressionPlugin({
+            algorithm: 'gzip',
+            test: /\.(js|css|html|svg)$/,
+            threshold: 8192,
+            minRatio: 0.8,
+          }),
+        ] : []),
       ],
-    },
+    };
+  }
+
+  // UMD format (default)
+  return {
+    ...baseConfig,
     externals: {
-      react: isESM ? 'react' : {
+      react: {
         commonjs: 'react',
         commonjs2: 'react',
-        amd: 'React',
+        amd: 'react',
         root: 'React',
       },
-      'react-dom': isESM ? 'react-dom' : {
+      'react-dom': {
         commonjs: 'react-dom',
         commonjs2: 'react-dom',
-        amd: 'ReactDOM',
+        amd: 'react-dom',
         root: 'ReactDOM',
       },
     },
-    plugins: [
-      new webpack.DefinePlugin({
-        'process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      }),
-      // Only add compression plugin when explicitly requested
-      ...(shouldCompress ? [
-        new CompressionPlugin({
-          algorithm: 'gzip',
-          test: /\.(js|css|html|svg)$/,
-          threshold: 8192,
-          minRatio: 0.8,
-          filename: '[path][base].gz',
-          deleteOriginalAssets: false, // Keep original files
-        }),
-      ] : []),
-      ...(shouldAnalyze && !isESM ? [new BundleAnalyzerPlugin()] : []),
-    ],
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: shouldCompress ? 'index.min.js' : 'index.js',
+      library: {
+        name: 'ReactFeedbackWidget',
+        type: 'umd',
+      },
+      globalObject: 'typeof self !== "undefined" ? self : this',
+    },
     optimization: {
-      minimize: isProduction,
-      minimizer: [
+      minimize: shouldCompress,
+      minimizer: shouldCompress ? [
         new TerserPlugin({
           terserOptions: {
             compress: {
-              drop_console: isProduction,
-              drop_debugger: isProduction,
+              drop_console: true,
+              drop_debugger: true,
             },
+            mangle: true,
             format: {
               comments: false,
             },
           },
           extractComments: false,
         }),
-      ],
+      ] : [],
     },
-    stats: {
-      children: false,
-      modules: false,
-    },
+    devtool: shouldCompress ? false : 'source-map',
+    plugins: [
+      ...baseConfig.plugins,
+      ...(shouldCompress ? [
+        new CompressionPlugin({
+          algorithm: 'gzip',
+          test: /\.(js|css|html|svg)$/,
+          threshold: 8192,
+          minRatio: 0.8,
+        }),
+      ] : []),
+    ],
   };
-};
-
-module.exports = (env = {}) => {
-  // Clean dist directory only once at the start of UMD build
-  if (env.format === 'umd' || !env.format) {
-    const fs = require('fs');
-    const rimraf = require('rimraf');
-    if (fs.existsSync('dist')) {
-      rimraf.sync('dist');
-    }
-  }
-  
-  return createConfig(env.format);
 };

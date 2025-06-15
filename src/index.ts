@@ -8,36 +8,33 @@
  */
 
 // Core components
-export { FeedbackProvider, useFeedback } from './components/FeedbackProvider';
+export { FeedbackProvider } from './contexts/FeedbackContext';
+export { ThemeProvider } from './contexts/ThemeContext';
+
+// Main components
 export { FeedbackButton } from './components/FeedbackButton';
+export { FeedbackModal } from './components/FeedbackModal';
 export { OptimizedFeedbackWidget } from './components/OptimizedFeedbackWidget';
 
-// Types - export from centralized types module
-export type { 
-  FeedbackConfig, 
-  FeedbackContextType,
-  OptimizedFeedbackWidgetProps,
-  FeedbackButtonProps,
-  Feedback,
-  FeedbackCategory,
-  FeedbackAttachment,
-  ThemePreference,
-  FeedbackModalStyles,
-  AnimationConfig,
-  FeedbackTemplate,
-  LocalizationConfig,
-  AnalyticsConfig,
-  IssueTrackerConfig,
-  AnyIssueTrackerConfig,
-  WebhookConfig,
-  NotificationConfig,
-  UserIdentity,
-  FeedbackProviderProps,
-  ThemeContextType,
-  TemplateConfig,
-  TemplateField,
-  SupportedLocale
-} from './types';
+// Hooks
+export { useFeedback } from './hooks/useFeedback';
+export { useTheme } from './hooks/useTheme';
+export { useFeedbackAnalytics } from './hooks/useFeedbackAnalytics';
+export { useFeedbackHistory } from './hooks/useFeedbackHistory';
+export { useShakeDetection } from './hooks/useShakeDetection';
+export { useLocalization } from './hooks/useLocalization';
 
-// Default export
+// Utilities
+export * from './utils';
+export * from './utils/validation';
+export * from './utils/categories';
+export * from './utils/templates';
+
+// Types
+export type * from './types';
+
+// Integration utilities (tree-shakeable)
+export { processIntegrations, processVoteIntegrations } from './utils/integrations';
+
+// Default export for convenience
 export { OptimizedFeedbackWidget as default } from './components/OptimizedFeedbackWidget';

@@ -5,32 +5,43 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.esm.js",
-  "sideEffects": false,
-  "private": false,
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./min": {
+      "import": "./dist/index.esm.min.js",
+      "require": "./dist/index.min.js"
+    }
   },
   "files": [
     "dist",
+    "src",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "npm run clean && npm run build:main && npm run build:esm",
-    "build:main": "NODE_ENV=production webpack --mode=production --env format=umd",
-    "build:esm": "NODE_ENV=production webpack --mode=production --env format=esm",
-    "build:compressed": "npm run build && COMPRESS=true npm run build:main && COMPRESS=true npm run build:esm",
+    "build": "npm run clean && npm run build:dev && npm run build:prod && npm run build:types",
+    "build:dev": "NODE_ENV=development webpack --mode=development --env format=umd && NODE_ENV=development webpack --mode=development --env format=esm",
+    "build:prod": "NODE_ENV=production COMPRESS=true webpack --mode=production --env format=umd && NODE_ENV=production COMPRESS=true webpack --mode=production --env format=esm",
+    "build:safe": "npm run clean && npm run build:umd && npm run build:types",
+    "build:umd": "NODE_ENV=development webpack --mode=development --env format=umd && NODE_ENV=production COMPRESS=true webpack --mode=production --env format=umd",
+    "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist",
+    "build:main": "NODE_ENV=development webpack --mode=development --env format=umd",
+    "build:esm": "NODE_ENV=development webpack --mode=development --env format=esm",
+    "build:compressed": "npm run clean && NODE_ENV=production COMPRESS=true webpack --mode=production --env format=umd && NODE_ENV=production COMPRESS=true webpack --mode=production --env format=esm",
     "clean": "rimraf dist",
-    "prepare": "npm run build",
+    "prepare": "npm run build:dev",
+    "prepublishOnly": "npm run build",
     "test": "NODE_ENV=test jest --passWithNoTests",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "release": "semantic-release",
     "publish:npm": "npm publish --access=public",
     "pack:dist": "tar -czf dist.tar.gz -C dist .",
-    "prepublishOnly": "npm run build",
     "publish:github": "npm publish --registry=https://npm.pkg.github.com",
     "build:github": "npm run build && npm run package:github",
     "package:github": "node -e \"const pkg = require('./package.json'); pkg.name = '@ArlindMaliqi/react-feedback-report-widget'; pkg.publishConfig.registry = 'https://npm.pkg.github.com'; require('fs').writeFileSync('package.github.json', JSON.stringify(pkg, null, 2));\"",
@@ -178,42 +189,5 @@
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=7.0.0"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./testing": {
-      "import": "./dist/testing/index.esm.js",
-      "require": "./dist/testing/index.js",
-      "types": "./dist/testing/index.d.ts"
-    },
-    "./storybook": {
-      "import": "./dist/storybook/index.esm.js",
-      "require": "./dist/storybook/index.js",
-      "types": "./dist/storybook/index.d.ts"
-    },
-    "./examples": {
-      "import": "./dist/examples/index.esm.js",
-      "require": "./dist/examples/index.js",
-      "types": "./dist/examples/index.d.ts"
-    },
-    "./optimized": {
-      "import": "./dist/components/OptimizedFeedbackWidget.esm.js",
-      "require": "./dist/components/OptimizedFeedbackWidget.js",
-      "types": "./dist/components/OptimizedFeedbackWidget.d.ts"
-    },
-    "./core": {
-      "import": "./dist/core.esm.js",
-      "require": "./dist/core.js",
-      "types": "./dist/core.d.ts"
-    },
-    "./minimal": {
-      "import": "./dist/minimal.esm.js",
-      "require": "./dist/minimal.js",
-      "types": "./dist/minimal.d.ts"
-    }
   }
 }

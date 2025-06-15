@@ -5,7 +5,10 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "declaration": true,
-    "outDir": "./dist",
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "src",
     "removeComments": true,
     "importHelpers": true,
     "downlevelIteration": false,
@@ -16,16 +19,19 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": false
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/**/*.stories.ts",
     "src/**/*.stories.tsx",
-    "src/dev/**/*",
-    "src/examples/**/*",
-    "**/*.d.ts"
+    "src/**/__tests__/**/*",
+    "node_modules",
+    "dist"
   ]
 }
