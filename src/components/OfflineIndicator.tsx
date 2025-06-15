@@ -1,85 +1,94 @@
 /**
- * Offline indicator component
+ * Offline status indicator component
  * @module components/OfflineIndicator
  */
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useFeedback } from '../hooks/useFeedback';
 
+/**
+ * Props for the OfflineIndicator component
+ */
 interface OfflineIndicatorProps {
+  /** Position of the indicator */
   position?: 'top' | 'bottom';
+  /** Whether to show sync button */
   showSyncButton?: boolean;
+  /** Custom styling */
+  style?: React.CSSProperties;
 }
 
 /**
- * Component that displays an offline status indicator and sync button
- * 
- * Shows when the app is offline and allows users to manually trigger
- * synchronization of pending feedback when back online.
- * 
- * @param props - Component props
- * @param props.position - Position of the indicator, either 'top' or 'bottom'
- * @param props.showSyncButton - Whether to show the sync button
+ * Component that shows offline status and pending sync count
  */
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   position = 'top',
-  showSyncButton = true
+  showSyncButton = true,
+  style = {}
 }) => {
-  const { isOffline, syncOfflineFeedback } = useFeedback();
-  const [isSyncing, setIsSyncing] = useState(false);
+  const { isOffline, pendingCount, syncPendingFeedback } = useFeedback();
 
-  const handleSync = async () => {
-    if (!syncOfflineFeedback) return;
-    
-    setIsSyncing(true);
-    try {
-      await syncOfflineFeedback();
-    } catch (error) {
-      console.error('Sync failed:', error);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  if (!isOffline) {
+  if (!isOffline && pendingCount === 0) {
     return null;
   }
 
+  const handleSync = async () => {
+    try {
+      await syncPendingFeedback();
+    } catch (error) {
+      console.error('Sync failed:', error);
+    }
+  };
+
+  const baseStyle: React.CSSProperties = {
+    position: 'fixed',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 999997,
+    backgroundColor: isOffline ? '#fbbf24' : '#3b82f6',
+    color: 'white',
+    padding: '12px 20px',
+    borderRadius: '25px',
+    fontSize: '14px',
+    fontWeight: '500',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    ...(position === 'top' ? { top: '20px' } : { bottom: '20px' }),
+    ...style
+  };
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        [position]: '10px',
-        backgroundColor: '#f59e0b',
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '20px',
-        fontSize: '0.875rem',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-      }}
-    >
-      <span>📡</span>
-      <span>You're offline</span>
-      {showSyncButton && (
+    <div style={baseStyle}>
+      <span>
+        {isOffline ? '📡' : '📤'} 
+        {isOffline ? ` Offline` : ''} 
+        {pendingCount > 0 && ` ${pendingCount} pending`}
+      </span>
+      
+      {showSyncButton && pendingCount > 0 && !isOffline && (
         <button
           onClick={handleSync}
-          disabled={isSyncing}
           style={{
-            background: 'rgba(255,255,255,0.2)',
+            background: 'rgba(255, 255, 255, 0.2)',
             border: 'none',
             color: 'white',
-            padding: '4px 8px',
+            padding: '4px 12px',
             borderRadius: '12px',
-            fontSize: '0.75rem',
-            cursor: isSyncing ? 'not-allowed' : 'pointer'
+            fontSize: '12px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
           }}
         >
-          {isSyncing ? 'Syncing...' : 'Sync'}
+          Sync Now
         </button>
       )}
     </div>

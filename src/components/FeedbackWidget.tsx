@@ -6,6 +6,7 @@ import { FeedbackButton } from './FeedbackButton';
 import { FeedbackModal } from './FeedbackModal';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import type { FeedbackWidgetProps, ThemePreference } from '../types';
+import OfflineIndicator from './OfflineIndicator';
 
 /**
  * Complete Feedback Widget with all features
@@ -22,9 +23,9 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
     // Core features
     enableShakeDetection: false,
     enableOfflineSupport: true,
-    enableVoting: false,
+    enableVoting: true, // Enable voting by default
     enableFileAttachments: true,
-    collectUserIdentity: false,
+    collectUserIdentity: true, // Enable identity collection
     collectUserAgent: true,
     collectUrl: true,
     collectEmail: true,
@@ -33,7 +34,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
     maxAttachments: 5,
     maxFileSize: 10 * 1024 * 1024, // 10MB
     allowedAttachmentTypes: ['image/*', 'application/pdf', 'text/*'],
-    rememberUserIdentity: true,
+    rememberUserIdentity: true, // Enable identity persistence
     
     // Theme and appearance
     theme: 'system' as ThemePreference,
@@ -72,11 +73,15 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
         {children}
         <FeedbackButton />
         <FeedbackModal 
-          isOpen={false}
-          onClose={() => {}}
-          onSubmit={async () => {}}
           config={mergedConfig}
         />
+        {/* Add offline indicator */}
+        {mergedConfig.enableOfflineSupport && (
+          <OfflineIndicator
+            position="bottom"
+            showSyncButton={true}
+          />
+        )}
       </FeedbackProvider>
     </ThemeProvider>
   );
