@@ -1,3 +1,10 @@
+## [2.1.8](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.7...v2.1.8) (2025-06-15)
+
+
+### Bug Fixes
+
+* minor input styling changes, improved modal appearance ([fd05c03](https://github.com/ArlindMaliqi/feedback-report/commit/fd05c036904baa33a5679d772527848618b38f6d))
+
 ## [2.1.7](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.6...v2.1.7) (2025-06-15)
 
 
