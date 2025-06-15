@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/ArlindMaliqi/feedback-report/compare/v2.2.0...v2.2.1) (2025-06-15)
+
+
+### Bug Fixes
+
+* added missing docs for types, missing feature implementations re-added ([5b4c8b2](https://github.com/ArlindMaliqi/feedback-report/commit/5b4c8b20ae994cebd2bac9b21a531117863b66c1))
+
 # [2.2.0](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.9...v2.2.0) (2025-06-15)
 
 
