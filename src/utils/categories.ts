@@ -1,20 +1,19 @@
 /**
- * Default feedback categories and utilities
+ * Category management utilities
  * @module utils/categories
  */
-
-import type { FeedbackCategory } from '../types';
+import type { Category, Subcategory } from '../types';
 
 /**
- * Default feedback categories
+ * Default categories for feedback classification
  */
-export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
+export const DEFAULT_CATEGORIES: Category[] = [
   {
     id: 'bug',
     name: 'Bug Report',
     description: 'Report a problem or issue',
     icon: '🐛',
-    color: '#dc2626',
+    color: '#ef4444',
     subcategories: [
       {
         id: 'ui',
@@ -35,9 +34,15 @@ export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
         icon: '⚙️'
       },
       {
+        id: 'crash',
+        name: 'Crash/Error',
+        description: 'Application crashes or error messages',
+        icon: '💥'
+      },
+      {
         id: 'data',
         name: 'Data Issues',
-        description: 'Incorrect or missing data',
+        description: 'Problems with data loading or saving',
         icon: '📊'
       }
     ]
@@ -47,12 +52,12 @@ export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
     name: 'Feature Request',
     description: 'Suggest a new feature or improvement',
     icon: '💡',
-    color: '#2563eb',
+    color: '#10b981',
     subcategories: [
       {
         id: 'enhancement',
         name: 'Enhancement',
-        description: 'Improve existing feature',
+        description: 'Improve existing functionality',
         icon: '⬆️'
       },
       {
@@ -66,54 +71,72 @@ export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
         name: 'Integration',
         description: 'Connect with external services',
         icon: '🔗'
+      },
+      {
+        id: 'automation',
+        name: 'Automation',
+        description: 'Automate manual processes',
+        icon: '🤖'
       }
     ]
   },
   {
-    id: 'improvement',
-    name: 'Improvement',
-    description: 'Suggest improvements to existing features',
-    icon: '📈',
-    color: '#059669',
+    id: 'usability',
+    name: 'Usability',
+    description: 'User experience and interface feedback',
+    icon: '👥',
+    color: '#3b82f6',
     subcategories: [
       {
-        id: 'usability',
-        name: 'Usability',
-        description: 'Make features easier to use',
-        icon: '👥'
+        id: 'navigation',
+        name: 'Navigation',
+        description: 'Difficulty finding or accessing features',
+        icon: '🧭'
       },
       {
         id: 'accessibility',
         name: 'Accessibility',
-        description: 'Improve accessibility support',
+        description: 'Issues with screen readers or keyboard navigation',
         icon: '♿'
+      },
+      {
+        id: 'mobile',
+        name: 'Mobile Experience',
+        description: 'Issues specific to mobile devices',
+        icon: '📱'
       },
       {
         id: 'design',
         name: 'Design',
-        description: 'Visual and UX improvements',
+        description: 'Visual design and layout suggestions',
         icon: '🎨'
       }
     ]
   },
   {
-    id: 'question',
-    name: 'Question',
-    description: 'Ask questions or request help',
-    icon: '❓',
-    color: '#7c3aed',
+    id: 'content',
+    name: 'Content',
+    description: 'Feedback about content quality and accuracy',
+    icon: '📝',
+    color: '#8b5cf6',
     subcategories: [
       {
-        id: 'how-to',
-        name: 'How To',
-        description: 'Learn how to use features',
-        icon: '📚'
+        id: 'accuracy',
+        name: 'Accuracy',
+        description: 'Incorrect or outdated information',
+        icon: '✅'
       },
       {
-        id: 'clarification',
-        name: 'Clarification',
-        description: 'Need clarification on behavior',
-        icon: '🤔'
+        id: 'missing',
+        name: 'Missing Content',
+        description: 'Content that should be added',
+        icon: '❓'
+      },
+      {
+        id: 'quality',
+        name: 'Quality',
+        description: 'Content quality improvements',
+        icon: '⭐'
       }
     ]
   },
@@ -123,40 +146,61 @@ export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
     description: 'General feedback or questions',
     icon: '💬',
     color: '#6b7280',
-    subcategories: []
+    subcategories: [
+      {
+        id: 'question',
+        name: 'Question',
+        description: 'General questions or help requests',
+        icon: '❓'
+      },
+      {
+        id: 'compliment',
+        name: 'Compliment',
+        description: 'Positive feedback and praise',
+        icon: '👏'
+      },
+      {
+        id: 'complaint',
+        name: 'Complaint',
+        description: 'General complaints or concerns',
+        icon: '😞'
+      }
+    ]
   }
 ];
 
 /**
- * Get category by ID
+ * Get a category by ID
  */
-export const getCategoryById = (id: string): FeedbackCategory | undefined => {
-  return DEFAULT_CATEGORIES.find(category => category.id === id);
+export const getCategoryById = (categoryId: string): Category | undefined => {
+  return DEFAULT_CATEGORIES.find(category => category.id === categoryId);
 };
 
 /**
- * Get subcategory by category and subcategory ID
+ * Get a subcategory by category and subcategory ID
  */
-export const getSubcategoryById = (categoryId: string, subcategoryId: string) => {
+export const getSubcategoryById = (categoryId: string, subcategoryId: string): Subcategory | undefined => {
   const category = getCategoryById(categoryId);
-  return category?.subcategories?.find(sub => sub.id === subcategoryId);
+  return category?.subcategories?.find((sub: Subcategory) => sub.id === subcategoryId);
 };
 
 /**
- * Get all categories with their subcategories flattened
+ * Get all categories as a flat list with their subcategories
  */
-export const getFlattenedCategories = () => {
-  const flattened: Array<{ category: FeedbackCategory; subcategory?: any }> = [];
+export const getFlatCategoryList = (): Array<{ category: Category; subcategory?: Subcategory }> => {
+  const flatList: Array<{ category: Category; subcategory?: Subcategory }> = [];
   
   DEFAULT_CATEGORIES.forEach(category => {
-    flattened.push({ category });
+    // Add the main category
+    flatList.push({ category });
     
+    // Add subcategories if they exist
     if (category.subcategories) {
-      category.subcategories.forEach(subcategory => {
-        flattened.push({ category, subcategory });
+      category.subcategories.forEach((subcategory: Subcategory) => {
+        flatList.push({ category, subcategory });
       });
     }
   });
   
-  return flattened;
+  return flatList;
 };

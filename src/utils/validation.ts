@@ -25,8 +25,8 @@ export const validateFeedback = (feedback: Feedback): ValidationResult => {
   }
   
   // Message length validation
-  if (feedback.message && feedback.message.length > 10000) {
-    errors.push('Message is too long (max 10,000 characters)');
+  if (feedback.message && feedback.message.length > 5000) {
+    errors.push('Message is too long (max 5,000 characters)');
   }
   
   // Email validation if provided
@@ -41,7 +41,8 @@ export const validateFeedback = (feedback: Feedback): ValidationResult => {
   
   return {
     isValid: errors.length === 0,
-    errors: errors.length > 0 ? errors : undefined
+    errors: errors.length > 0 ? errors : undefined,
+    error: errors.length > 0 ? errors[0] : undefined
   };
 };
 
@@ -70,6 +71,7 @@ export const isValidUrl = (url: string): boolean => {
  */
 export const sanitizeInput = (input: string): string => {
   return input
-    .replace(/[<>]/g, '') // Remove HTML tags
-    .trim();
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .trim()
+    .substring(0, 5000); // Limit length
 };

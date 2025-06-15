@@ -3,16 +3,16 @@
  * @module hooks/useFeedback
  */
 import { useContext } from 'react';
-import { FeedbackContext } from '../contexts/FeedbackContext';
-import type { FeedbackContextType } from '../types';
+import { FeedbackContext } from '../components/FeedbackProvider';
+import type { FeedbackContextValue } from '../types';
 
 /**
  * Hook to access the feedback context
  * 
- * @returns FeedbackContextType
+ * @returns FeedbackContextValue
  * @throws Error if used outside FeedbackProvider
  */
-export const useFeedback = (): FeedbackContextType => {
+export const useFeedback = (): FeedbackContextValue => {
   const context = useContext(FeedbackContext);
   
   if (!context) {

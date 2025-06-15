@@ -14,7 +14,7 @@ export type {
   Feedback, 
   FeedbackConfig, 
   UserIdentity,
-  FeedbackContextType
+  FeedbackContextValue
 } from '../types';
 
 // Lightweight button component

@@ -16,7 +16,7 @@ import type {
   FeedbackModalStyles, 
   ThemePreference,
   AnimationConfig,
-  FeedbackTemplate
+  TemplateConfig
 } from '../types';
 
 /**
@@ -71,7 +71,7 @@ export interface OptimizedFeedbackWidgetProps {
   /** Animation configuration for modal transitions */
   animation?: AnimationConfig;
   /** Template to use for feedback form layout */
-  template?: FeedbackTemplate;
+  template?: TemplateConfig;
   /** Whether to show offline indicator when offline support is enabled */
   showOfflineIndicator?: boolean;
   /** Custom loading fallback component for lazy-loaded modules */
@@ -336,7 +336,7 @@ export const OptimizedFeedbackWidget: React.FC<OptimizedFeedbackWidgetProps> = (
                 }}
                 styles={modalStyles} 
                 animation={animation}
-                templateId={template}
+                template={template}
               />
             </Suspense>
           </LazyComponentErrorBoundary>

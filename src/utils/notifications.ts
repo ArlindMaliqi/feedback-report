@@ -12,151 +12,56 @@
  * Notification types supported by the system
  * @enum {string}
  */
-export enum NotificationType {
-  SUCCESS = 'success',
-  ERROR = 'error',
-  INFO = 'info',
-  WARNING = 'warning'
-}
+export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
 /**
- * Configuration options for notifications
- * @interface NotificationOptions
+ * Show success notification
  */
-export interface NotificationOptions {
-  /** Duration in milliseconds before auto-dismiss */
-  duration?: number;
-  /** Whether the notification can be dismissed by user */
-  dismissible?: boolean;
-  /** Position of the notification */
-  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-  /** Custom CSS classes */
-  className?: string;
-}
-
-/**
- * Toast provider interface for abstraction
- * @interface ToastProvider
- */
-interface ToastProvider {
-  success: (message: string, options?: NotificationOptions) => void;
-  error: (message: string, options?: NotificationOptions) => void;
-  info: (message: string, options?: NotificationOptions) => void;
-  warning: (message: string, options?: NotificationOptions) => void;
-}
-
-/**
- * Lazy-loaded toast provider with fallback
- * @private
- */
-let toastProvider: ToastProvider | null = null;
-
-/**
- * Gets the toast provider instance (lazy-loaded for tree-shaking)
- * @returns {ToastProvider} Toast provider instance
- * @private
- */
-const getToastProvider = (): ToastProvider => {
-  if (toastProvider) return toastProvider;
-
-  // Try to load Sonner dynamically
-  try {
-    const sonner = require('sonner');
-    toastProvider = {
-      success: (message: string, options?: NotificationOptions) => 
-        sonner.toast.success(message, options),
-      error: (message: string, options?: NotificationOptions) => 
-        sonner.toast.error(message, options),
-      info: (message: string, options?: NotificationOptions) => 
-        sonner.toast.info(message, options),
-      warning: (message: string, options?: NotificationOptions) => 
-        sonner.toast.warning(message, options)
-    };
-  } catch {
-    // Fallback to console/custom notification
-    toastProvider = {
-      success: (message: string) => console.log(`✅ ${message}`),
-      error: (message: string) => console.error(`❌ ${message}`),
-      info: (message: string) => console.info(`ℹ️ ${message}`),
-      warning: (message: string) => console.warn(`⚠️ ${message}`)
-    };
-  }
-
-  return toastProvider;
+export const showSuccess = (message: string): void => {
+  console.log('✅ Success:', message);
+  // Can be extended to use toast libraries like react-hot-toast, sonner, etc.
 };
 
 /**
- * Shows an error notification
- * @param {string} message - Error message to display
- * @param {NotificationOptions} [options] - Notification options
- * @since 1.0.0
+ * Show error notification
  */
-export const showError = (message: string, options?: NotificationOptions): void => {
-  const provider = getToastProvider();
-  provider.error(message, options);
+export const showError = (message: string): void => {
+  console.error('❌ Error:', message);
+  // Can be extended to use toast libraries
 };
 
 /**
- * Shows a success notification
- * @param {string} message - Success message to display
- * @param {NotificationOptions} [options] - Notification options
- * @since 1.0.0
+ * Show info notification
  */
-export const showSuccess = (message: string, options?: NotificationOptions): void => {
-  const provider = getToastProvider();
-  provider.success(message, options);
+export const showInfo = (message: string): void => {
+  console.info('ℹ️ Info:', message);
+  // Can be extended to use toast libraries
 };
 
 /**
- * Shows an info notification
- * @param {string} message - Informational message to display
- * @param {NotificationOptions} [options] - Notification options
- * @since 1.0.0
+ * Show warning notification
  */
-export const showInfo = (message: string, options?: NotificationOptions): void => {
-  const provider = getToastProvider();
-  provider.info(message, options);
+export const showWarning = (message: string): void => {
+  console.warn('⚠️ Warning:', message);
+  // Can be extended to use toast libraries
 };
 
 /**
- * Shows a warning notification
- * @param {string} message - Warning message to display
- * @param {NotificationOptions} [options] - Notification options
- * @since 1.0.0
+ * Generic notification function
  */
-export const showWarning = (message: string, options?: NotificationOptions): void => {
-  const provider = getToastProvider();
-  provider.warning(message, options);
-};
-
-/**
- * Shows a notification of any type
- * @param {NotificationType} type - Type of the notification
- * @param {string} message - Message to display
- * @param {NotificationOptions} [options] - Notification options
- * @since 1.0.0
- */
-export const showNotification = (
-  type: NotificationType, 
-  message: string, 
-  options?: NotificationOptions
-): void => {
-  const provider = getToastProvider();
-  
+export const showNotification = (type: NotificationType, message: string): void => {
   switch (type) {
-    case NotificationType.SUCCESS:
-      provider.success(message, options);
+    case 'success':
+      showSuccess(message);
       break;
-    case NotificationType.ERROR:
-      provider.error(message, options);
+    case 'error':
+      showError(message);
       break;
-    case NotificationType.INFO:
-      provider.info(message, options);
+    case 'info':
+      showInfo(message);
       break;
-    case NotificationType.WARNING:
-      provider.warning(message, options);
+    case 'warning':
+      showWarning(message);
       break;
-    default:
-      provider.info(message, options);
   }
 };

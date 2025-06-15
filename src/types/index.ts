@@ -1,15 +1,11 @@
-/**
- * Essential type definitions for the feedback widget
- * @module types
- */
+import React from 'react';
 
-// Core types
+// Basic types
 export type FeedbackType = 'bug' | 'feature' | 'improvement' | 'other';
 export type FeedbackStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
 export type FeedbackPriority = 'low' | 'medium' | 'high' | 'critical';
-export type FeedbackSubmissionStatus = 'pending' | 'synced' | 'failed' | 'submitted';
 export type ThemePreference = 'light' | 'dark' | 'system';
-export type FeedbackTheme = ThemePreference; // Alias for backward compatibility
+export type FeedbackSubmissionStatus = 'pending' | 'synced' | 'failed' | 'submitted';
 export type SupportedLocale = 'en' | 'es' | 'fr' | 'de' | 'nl' | 'ar' | 'he';
 
 // User interfaces
@@ -20,12 +16,7 @@ export interface User {
   avatar?: string;
 }
 
-export interface UserIdentity {
-  name?: string;
-  email?: string;
-  id?: string;
-  avatar?: string;
-}
+export interface UserIdentity extends User {}
 
 // Category interfaces
 export interface Category {
@@ -44,12 +35,8 @@ export interface Subcategory {
   icon?: string;
 }
 
-// Legacy aliases for backward compatibility
-export interface FeedbackCategory extends Category {}
-export interface FeedbackSubcategory extends Subcategory {}
-
 // Attachment interfaces
-export interface Attachment {
+export interface FeedbackAttachment {
   id: string;
   name: string;
   type: string;
@@ -63,9 +50,7 @@ export interface Attachment {
   dataUrl?: string;
 }
 
-export interface FeedbackAttachment extends Attachment {}
-
-// Main feedback interface
+// Core feedback interface
 export interface Feedback {
   id: string;
   message: string;
@@ -81,14 +66,15 @@ export interface Feedback {
   votes?: number;
   votedBy?: string[];
   submissionStatus?: FeedbackSubmissionStatus;
-  attachments?: Attachment[];
-  email?: string; // Legacy field
+  attachments?: FeedbackAttachment[];
+  email?: string;
+  metadata?: Record<string, any>;
 }
 
-// Template field configuration
+// Template configuration
 export interface TemplateField {
   id: string;
-  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'email' | 'radio' | 'number';
+  type: 'text' | 'textarea' | 'select' | 'email' | 'checkbox' | 'radio' | 'number';
   label: string;
   placeholder?: string;
   required?: boolean;
@@ -102,7 +88,6 @@ export interface TemplateField {
   };
 }
 
-// Template configuration
 export interface TemplateConfig {
   id: string;
   name: string;
@@ -110,8 +95,6 @@ export interface TemplateConfig {
   description?: string;
   fields: TemplateField[];
 }
-
-export interface FeedbackTemplate extends TemplateConfig {}
 
 // Animation configuration
 export interface AnimationConfig {
@@ -131,7 +114,7 @@ export interface FeedbackModalStyles {
   closeButton?: React.CSSProperties;
 }
 
-// Analytics configuration
+// Advanced configuration interfaces
 export interface AnalyticsConfig {
   provider: 'google-analytics' | 'segment' | 'mixpanel' | 'custom';
   trackingId?: string;
@@ -143,7 +126,6 @@ export interface AnalyticsConfig {
   customEvents?: Record<string, any>;
 }
 
-// Webhook configuration
 export interface WebhookConfig {
   url: string;
   secret?: string;
@@ -151,7 +133,6 @@ export interface WebhookConfig {
   events?: string[];
 }
 
-// Issue tracker configuration
 export interface IssueTrackerConfig {
   provider: 'github' | 'jira' | 'gitlab' | 'azure-devops' | 'custom';
   apiToken?: string;
@@ -165,12 +146,6 @@ export interface IssueTrackerConfig {
   headers?: Record<string, string>;
 }
 
-export interface CustomIssueTrackerConfig extends IssueTrackerConfig {
-  provider: 'custom';
-  apiEndpoint: string;
-}
-
-// Notification configuration
 export interface NotificationConfig {
   slack?: {
     webhookUrl: string;
@@ -201,15 +176,13 @@ export interface NotificationConfig {
   };
 }
 
-// Localization configuration
 export interface LocalizationConfig {
-  locale: string;
-  fallbackLocale?: string;
+  locale: SupportedLocale;
+  fallbackLocale?: SupportedLocale;
   rtl?: boolean;
   customTranslations?: Record<string, Record<string, string>>;
 }
 
-// Theme configuration
 export interface ThemeConfig {
   mode: 'light' | 'dark' | 'system';
   primaryColor?: string;
@@ -232,6 +205,7 @@ export interface FeedbackConfig {
   collectUserIdentity?: boolean;
   collectUserAgent?: boolean;
   collectUrl?: boolean;
+  collectEmail?: boolean;
   enableFileAttachments?: boolean;
   maxFileSize?: number;
   allowedFileTypes?: string[];
@@ -241,7 +215,7 @@ export interface FeedbackConfig {
   rememberUserIdentity?: boolean;
   
   // Appearance
-  theme?: ThemeConfig | string;
+  theme?: ThemeConfig | ThemePreference;
   animation?: AnimationConfig;
   
   // Categories and templates
@@ -262,18 +236,27 @@ export interface FeedbackConfig {
   privacyPolicyUrl?: string;
   dataRetentionDays?: number;
   anonymizeData?: boolean;
+  
+  // Callbacks
+  onSuccess?: (feedback: Feedback) => void;
+  onError?: (error: Error) => void;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
 // Context types
 export interface FeedbackContextValue {
+  // Core state
   feedback: Feedback[];
-  feedbacks?: Feedback[];
+  feedbacks?: Feedback[]; // Backward compatibility
   isSubmitting: boolean;
   isOnline: boolean;
   isOffline?: boolean;
   isOpen?: boolean;
   loading?: boolean;
   error?: string | null;
+  
+  // Actions
   submitFeedback: (
     feedbackOrMessage: Partial<Feedback> | string, 
     type?: FeedbackType, 
@@ -282,17 +265,19 @@ export interface FeedbackContextValue {
   voteFeedback: (id: string, type: 'up' | 'down') => Promise<void>;
   openModal?: () => void;
   closeModal?: () => void;
+  
+  // Data management
   pendingCount: number;
   syncPendingFeedback: () => Promise<void>;
   syncOfflineFeedback?: () => Promise<void>;
   clearFeedback: () => void;
   getFeedbackById: (id: string) => Feedback | undefined;
   updateFeedback: (id: string, updates: Partial<Feedback>) => void;
+  
+  // Configuration
   config: FeedbackConfig;
   categories?: Category[];
 }
-
-export interface FeedbackContextType extends FeedbackContextValue {}
 
 export interface ThemeContextType {
   theme: ThemePreference;
@@ -304,23 +289,39 @@ export interface ThemeContextType {
 }
 
 export interface LocalizationContextType {
-  locale: string;
-  setLocale: (locale: string) => void;
+  locale: SupportedLocale;
+  setLocale: (locale: SupportedLocale) => void;
   t: (key: string, params?: Record<string, any>) => string;
   isRTL: boolean;
-}
-
-// Provider props
-export interface FeedbackProviderProps {
-  config?: FeedbackConfig; // Make optional for easier testing
-  children: React.ReactNode;
-  _testProps?: {
-    mockApiResponse?: any;
-    disableNetworkRequests?: boolean;
-  };
+  dir: 'ltr' | 'rtl';
 }
 
 // Component props
+export interface FeedbackWidgetProps {
+  config: FeedbackConfig;
+  children?: React.ReactNode;
+}
+
+export interface FeedbackButtonProps {
+  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  className?: string;
+  children?: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  size?: 'small' | 'medium' | 'large';
+  variant?: 'primary' | 'secondary' | 'outline';
+}
+
+export interface FeedbackModalProps {
+  template?: TemplateConfig;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSubmit?: (feedback: any) => Promise<void>;
+  styles?: FeedbackModalStyles;
+  animation?: AnimationConfig;
+  config?: FeedbackConfig;
+}
+
 export interface OptimizedFeedbackWidgetProps {
   config?: FeedbackConfig;
   theme?: ThemePreference | string;
@@ -328,4 +329,21 @@ export interface OptimizedFeedbackWidgetProps {
   enableShakeDetection?: boolean;
   className?: string;
   children?: React.ReactNode;
+  buttonProps?: FeedbackButtonProps;
+  modalStyles?: FeedbackModalStyles;
+  animation?: AnimationConfig;
+  template?: TemplateConfig;
+  showOfflineIndicator?: boolean;
+  loadingFallback?: React.ReactNode;
+  errorFallback?: React.ComponentType<{ error: Error; resetError: () => void }>;
+}
+
+// Provider props
+export interface FeedbackProviderProps {
+  config: FeedbackConfig;
+  children: React.ReactNode;
+  _testProps?: {
+    mockApiResponse?: any;
+    disableNetworkRequests?: boolean;
+  };
 }

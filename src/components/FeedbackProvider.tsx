@@ -1,181 +1,306 @@
-/**
- * Enhanced FeedbackProvider component with comprehensive feedback management
- * @module components/FeedbackProvider
- */
-import React, { 
-  useState, 
-  useCallback, 
-  useEffect, 
-  useMemo, 
-  ReactNode, 
-  useContext 
-} from 'react';
-import type { 
-  Feedback, 
-  FeedbackConfig, 
-  FeedbackContextValue
-} from '../types';
-import { FeedbackContext } from '../contexts/FeedbackContext';
+'use client';
 
-// Lazy load heavy utilities
-const createTranslator = (config?: any) => (key: string, params?: any) => key;
-const generateId = () => Date.now().toString();
-const validateFeedback = (feedback: Feedback) => ({ isValid: true });
-const handleApiResponse = async (response: Response) => ({ success: response.ok });
+import React, { createContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
+import type { FeedbackContextValue, FeedbackConfig, Feedback, Category } from '../types';
+import { generateId, validateFeedback, handleApiResponse } from '../utils';
+import { createTranslator } from '../utils/localization';
+import { integrationManager } from '../integrations';
 
-// Lazy load notifications
-const showSuccess = (msg: string) => console.log('✅', msg);
-const showError = (msg: string) => console.error('❌', msg);
-const showInfo = (msg: string) => console.info('ℹ️', msg);
+const FeedbackContext = createContext<FeedbackContextValue | null>(null);
 
-export interface FeedbackProviderProps {
+interface FeedbackProviderProps {
+  config: FeedbackConfig;
   children: ReactNode;
-  config?: FeedbackConfig;
   _testProps?: {
     mockApiResponse?: any;
     disableNetworkRequests?: boolean;
   };
 }
 
-const DEFAULT_CONFIG: Partial<FeedbackConfig> = {
-  enableShakeDetection: false,
-  theme: 'system',
-  enableOfflineSupport: false,
-  maxAttachments: 3,
-  allowedAttachmentTypes: ['image/png', 'image/jpeg', 'image/gif'],
-  requiredIdentityFields: [],
-  enableVoting: false,
-  categories: []
-};
-
-/**
- * Enhanced FeedbackProvider with comprehensive feedback management
- */
-export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({ 
-  children, 
-  config: initialConfig = {},
+export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
+  config,
+  children,
   _testProps
 }) => {
-  // Memoize the final configuration
-  const finalConfig = useMemo(() => ({
-    ...DEFAULT_CONFIG,
-    ...initialConfig
-  }), [initialConfig]);
-
-  // State management
+  // Enhanced state management
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  const [isOffline, setIsOffline] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [isOffline, setIsOffline] = useState(false);
 
-  // Create translator
-  const t = useMemo(() => createTranslator(finalConfig.localization), [finalConfig.localization]);
+  // Enhanced translator
+  const t = useMemo(() => createTranslator(config.localization), [config.localization]);
 
-  /**
-   * Opens the feedback modal
-   */
-  const openModal = useCallback(() => setIsOpen(true), []);
-  
-  /**
-   * Closes the feedback modal
-   */
-  const closeModal = useCallback(() => setIsOpen(false), []);
+  // Enhanced categories with defaults
+  const categories: Category[] = useMemo(() => {
+    return config.categories || [
+      {
+        id: 'bug',
+        name: 'Bug Report',
+        description: 'Report a problem or issue',
+        icon: '🐛',
+        subcategories: [
+          { id: 'ui', name: 'User Interface', description: 'Visual or layout issues' },
+          { id: 'performance', name: 'Performance', description: 'Slow or unresponsive behavior' },
+          { id: 'functionality', name: 'Functionality', description: 'Feature not working as expected' }
+        ]
+      },
+      {
+        id: 'feature',
+        name: 'Feature Request',
+        description: 'Suggest a new feature or improvement',
+        icon: '💡',
+        subcategories: [
+          { id: 'enhancement', name: 'Enhancement', description: 'Improve existing feature' },
+          { id: 'new-feature', name: 'New Feature', description: 'Add completely new functionality' }
+        ]
+      },
+      {
+        id: 'other',
+        name: 'Other',
+        description: 'General feedback or questions',
+        icon: '💬',
+        subcategories: []
+      }
+    ];
+  }, [config.categories]);
 
-  /**
-   * Submits feedback with validation and error handling
-   */
+  // Network status detection
+  useEffect(() => {
+    if (config.enableOfflineSupport && typeof window !== 'undefined') {
+      const updateOnlineStatus = () => setIsOffline(!navigator.onLine);
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+      
+      return () => {
+        window.removeEventListener('online', updateOnlineStatus);
+        window.removeEventListener('offline', updateOnlineStatus);
+      };
+    }
+  }, [config.enableOfflineSupport]);
+
+  // Enhanced modal controls
+  const openModal = useCallback(() => {
+    setIsOpen(true);
+    setError(null);
+    config.onOpen?.();
+  }, [config]);
+
+  const closeModal = useCallback(() => {
+    setIsOpen(false);
+    setError(null);
+    config.onClose?.();
+  }, [config]);
+
+  // Enhanced feedback submission with all features
   const submitFeedback = useCallback(async (
     feedbackOrMessage: Partial<Feedback> | string,
     type: Feedback["type"] = "other",
     additionalData: Record<string, any> = {}
-  ): Promise<void> => {
-    // Handle both object and string inputs
-    let message: string;
-    let feedbackData: Partial<Feedback>;
-
-    if (typeof feedbackOrMessage === 'string') {
-      message = feedbackOrMessage;
-      feedbackData = { message, type, ...additionalData };
-    } else {
-      message = feedbackOrMessage.message || '';
-      feedbackData = { type, ...additionalData, ...feedbackOrMessage };
-    }
-
-    if (!message.trim()) {
-      setError('Message is required');
-      return;
-    }
-
+  ) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const newFeedback: Feedback = {
+      // Handle both string and object inputs
+      let message: string;
+      let feedbackData: Partial<Feedback>;
+
+      if (typeof feedbackOrMessage === 'string') {
+        message = feedbackOrMessage;
+        feedbackData = { message, type, ...additionalData };
+      } else {
+        message = feedbackOrMessage.message || '';
+        feedbackData = { type, ...additionalData, ...feedbackOrMessage };
+      }
+
+      // Create complete feedback object with all features
+      const feedback: Feedback = {
         id: generateId(),
         message: message.trim(),
         type: feedbackData.type || 'other',
+        status: 'open',
         timestamp: new Date(),
         priority: feedbackData.priority || 'medium',
-        status: 'open',
         votes: 0,
-        url: typeof window !== 'undefined' ? window.location.href : '',
-        userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
+        votedBy: [],
         submissionStatus: isOffline ? 'pending' : 'synced',
-        ...feedbackData
+        
+        // Enhanced data collection
+        email: feedbackData.email || (config.collectEmail ? additionalData.email : undefined),
+        userAgent: config.collectUserAgent ? navigator.userAgent : undefined,
+        url: config.collectUrl ? window.location.href : undefined,
+        user: config.collectUserIdentity ? feedbackData.user : undefined,
+        
+        // Categories and attachments
+        category: feedbackData.category,
+        subcategory: feedbackData.subcategory,
+        attachments: feedbackData.attachments || [],
+        
+        // Metadata
+        metadata: {
+          ...feedbackData.metadata,
+          timestamp: Date.now(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          language: navigator.language,
+          platform: navigator.platform,
+          cookieEnabled: navigator.cookieEnabled,
+          screen: {
+            width: screen.width,
+            height: screen.height,
+            colorDepth: screen.colorDepth
+          },
+          viewport: {
+            width: window.innerWidth,
+            height: window.innerHeight
+          }
+        }
       };
 
-      // Validate feedback
-      const validation = validateFeedback(newFeedback);
+      // Enhanced validation
+      const validation = validateFeedback(feedback);
       if (!validation.isValid) {
-        const errorMsg = 'Validation failed';
+        const errorMsg = validation.errors?.join(', ') || validation.error || t('validation.messageRequired');
         setError(errorMsg);
-        showError(errorMsg);
         return;
       }
 
-      // Submit to API if online and not disabled in tests
-      if (!isOffline && !_testProps?.disableNetworkRequests && finalConfig.apiEndpoint) {
-        const response = await fetch(finalConfig.apiEndpoint, {
+      // Store locally first (offline support)
+      setFeedbacks(prev => [feedback, ...prev]);
+
+      // Submit to API if online and not disabled
+      if (!isOffline && !_testProps?.disableNetworkRequests && config.apiEndpoint) {
+        const response = await fetch(config.apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newFeedback)
+          body: JSON.stringify(feedback)
         });
 
-        await handleApiResponse(response);
+        const result = await handleApiResponse(response);
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+
+        // Update submission status
+        setFeedbacks(prev => 
+          prev.map(f => f.id === feedback.id ? { ...f, submissionStatus: 'synced' } : f)
+        );
       }
 
-      // Update local state
-      setFeedbacks(prev => [newFeedback, ...prev]);
+      // Process all integrations
+      if (!_testProps?.disableNetworkRequests) {
+        await integrationManager.process(feedback, config);
+      }
 
-      showSuccess('Feedback submitted successfully');
+      // Success callbacks and notifications
+      config.onSuccess?.(feedback);
+      
+      // Show success message based on locale
+      if (typeof window !== 'undefined') {
+        window.setTimeout(() => {
+          console.log(t('notification.success'));
+        }, 100);
+      }
+      
       closeModal();
     } catch (err) {
-      showError('Failed to submit feedback');
+      const errorMessage = err instanceof Error ? err.message : t('notification.error');
+      setError(errorMessage);
+      config.onError?.(err instanceof Error ? err : new Error(errorMessage));
+      
+      // Update submission status to failed
+      setFeedbacks(prev => 
+        prev.map(f => 
+          f.submissionStatus === 'pending' ? { ...f, submissionStatus: 'failed' } : f
+        )
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }, [isOffline, finalConfig.apiEndpoint, closeModal, _testProps]);
+  }, [config, closeModal, isOffline, t, _testProps]);
 
-  /**
-   * Handles voting on feedback
-   */
-  const voteFeedback = useCallback(async (id: string, vote: 'up' | 'down' = 'up'): Promise<void> => {
-    if (!finalConfig.enableVoting) return;
-    console.log(`Vote ${vote} on feedback ${id}`);
-  }, [finalConfig.enableVoting]);
+  // Enhanced voting system
+  const voteFeedback = useCallback(async (id: string, voteType: 'up' | 'down' = 'up'): Promise<void> => {
+    if (!config.enableVoting) return;
+    
+    const feedback = feedbacks.find(f => f.id === id);
+    if (!feedback) return;
 
-  // Get categories from config
-  const categories = useMemo(() => {
-    return finalConfig.categories || []
-  }, [finalConfig.categories]);
+    const userId = config.collectUserIdentity ? 'current-user' : 'anonymous';
+    const hasVoted = feedback.votedBy?.includes(userId);
+    
+    if (hasVoted) return; // Prevent duplicate votes
 
-  // Memoized context values
-  const contextValue: FeedbackContextValue = useMemo(() => ({
+    const updatedFeedback = {
+      ...feedback,
+      votes: (feedback.votes || 0) + (voteType === 'up' ? 1 : -1),
+      votedBy: [...(feedback.votedBy || []), userId]
+    };
+
+    setFeedbacks(prev => prev.map(f => f.id === id ? updatedFeedback : f));
+
+    // Submit vote to API
+    if (config.apiEndpoint && !_testProps?.disableNetworkRequests) {
+      try {
+        await fetch(`${config.apiEndpoint}/${id}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: voteType, userId })
+        });
+      } catch (error) {
+        console.error('Failed to submit vote:', error);
+      }
+    }
+  }, [config, feedbacks, _testProps]);
+
+  // Enhanced sync functionality
+  const syncPendingFeedback = useCallback(async (): Promise<void> => {
+    if (!config.enableOfflineSupport || isOffline) return;
+    
+    const pendingFeedbacks = feedbacks.filter(f => f.submissionStatus === 'pending' || f.submissionStatus === 'failed');
+    
+    for (const feedback of pendingFeedbacks) {
+      try {
+        if (config.apiEndpoint) {
+          const response = await fetch(config.apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(feedback)
+          });
+
+          if (response.ok) {
+            setFeedbacks(prev => 
+              prev.map(f => f.id === feedback.id ? { ...f, submissionStatus: 'synced' } : f)
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync feedback:', error);
+      }
+    }
+  }, [config, feedbacks, isOffline]);
+
+  // Enhanced data management
+  const clearFeedback = useCallback(() => {
+    setFeedbacks([]);
+  }, []);
+
+  const getFeedbackById = useCallback((id: string) => {
+    return feedbacks.find(f => f.id === id);
+  }, [feedbacks]);
+
+  const updateFeedback = useCallback((id: string, updates: Partial<Feedback>) => {
+    setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+  }, []);
+
+  // Enhanced context value with all features
+  const value: FeedbackContextValue = {
     // Core data
-    feedback: feedbacks, // Primary property
-    feedbacks, // Alias for backward compatibility
+    feedback: feedbacks,
+    feedbacks, // Backward compatibility
     
     // State
     isSubmitting,
@@ -193,45 +318,22 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
     
     // Data management
     pendingCount: feedbacks.filter(f => f.submissionStatus === 'pending').length,
-    syncPendingFeedback: async () => {},
-    syncOfflineFeedback: async () => {},
-    clearFeedback: () => setFeedbacks([]),
-    getFeedbackById: (id: string) => feedbacks.find(f => f.id === id),
-    updateFeedback: (id: string, updates: Partial<Feedback>) => {
-      setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
-    },
+    syncPendingFeedback,
+    syncOfflineFeedback: syncPendingFeedback, // Alias
+    clearFeedback,
+    getFeedbackById,
+    updateFeedback,
     
     // Configuration
-    config: finalConfig,
+    config,
     categories
-  }), [
-    feedbacks,
-    isSubmitting,
-    isOffline,
-    isOpen,
-    loading,
-    error,
-    submitFeedback,
-    voteFeedback,
-    openModal,
-    closeModal,
-    finalConfig,
-    categories
-  ]);
+  };
 
   return (
-    <FeedbackContext.Provider value={contextValue}>
+    <FeedbackContext.Provider value={value}>
       {children}
     </FeedbackContext.Provider>
   );
 };
 
-export const useFeedback = () => {
-  const context = useContext(FeedbackContext);
-  if (!context) {
-    throw new Error('useFeedback must be used within a FeedbackProvider');
-  }
-  return context;
-};
-
-export default FeedbackProvider;
+export { FeedbackContext };

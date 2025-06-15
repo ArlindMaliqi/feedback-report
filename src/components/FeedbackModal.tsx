@@ -2,18 +2,20 @@
  * Enhanced feedback modal component with advanced features
  * @module components/FeedbackModal
  */
+'use client';
+
 import React, { useState, useCallback, useEffect, useMemo, useRef, useContext } from 'react';
 import { 
   FeedbackConfig, 
   FeedbackModalStyles, 
   AnimationConfig, 
-  FeedbackTemplate, 
+  TemplateConfig, 
   UserIdentity,
   Feedback,
   FeedbackAttachment,
-  TemplateField
+  TemplateField,
+  Category
 } from '../types';
-import { useTheme } from '../hooks/useTheme';
 import { useFeedback } from '../hooks/useFeedback';
 import { LocalizationContext } from '../contexts/FeedbackContext';
 import { CategorySelector } from './CategorySelector';
@@ -26,31 +28,31 @@ import { showInfo } from '../utils/notifications';
  */
 export interface FeedbackModalProps {
   /** Whether the modal is open */
-  isOpen: boolean;
+  isOpen?: boolean;
   /** Function to close the modal */
-  onClose: () => void;
+  onClose?: () => void;
   /** Function to handle feedback submission */
-  onSubmit: (feedback: any) => Promise<void>;
+  onSubmit?: (feedback: any) => Promise<void>;
   /** Custom styling options */
   styles?: FeedbackModalStyles;
   /** Animation configuration */
   animation?: AnimationConfig;
-  /** Template ID to use */
-  templateId?: string | FeedbackTemplate; // Allow both string and object
+  /** Template to use */
+  template?: TemplateConfig;
   /** Configuration options */
   config?: FeedbackConfig;
 }
 
 /**
- * Default template for feedback modal
+ * Get template by ID helper function
  */
-const getTemplateById = (templateId: string | FeedbackTemplate): FeedbackTemplate => {
+const getTemplate = (templateId: string | TemplateConfig): TemplateConfig => {
   // If it's already an object, return it
   if (typeof templateId === 'object' && templateId !== null) {
     return templateId;
   }
   
-  const templates: Record<string, FeedbackTemplate> = {
+  const templates: Record<string, TemplateConfig> = {
     default: {
       id: 'default',
       name: 'Default Feedback',
@@ -62,40 +64,6 @@ const getTemplateById = (templateId: string | FeedbackTemplate): FeedbackTemplat
           { value: 'improvement', label: 'Improvement' },
           { value: 'other', label: 'Other' }
         ]}
-      ]
-    },
-    bug: {
-      id: 'bug',
-      name: 'Bug Report',
-      fields: [
-        { id: 'message', type: 'textarea', label: 'Describe the bug', required: true },
-        { id: 'steps', type: 'textarea', label: 'Steps to reproduce', required: false },
-        { id: 'expected', type: 'textarea', label: 'Expected behavior', required: false }
-      ]
-    },
-    'bug-report': {
-      id: 'bug-report',
-      name: 'Bug Report',
-      fields: [
-        { id: 'message', type: 'textarea', label: 'Describe the bug', required: true },
-        { id: 'steps', type: 'textarea', label: 'Steps to reproduce', required: false },
-        { id: 'expected', type: 'textarea', label: 'Expected behavior', required: false }
-      ]
-    },
-    feature: {
-      id: 'feature',
-      name: 'Feature Request',
-      fields: [
-        { id: 'message', type: 'textarea', label: 'Describe the feature', required: true },
-        { id: 'use_case', type: 'textarea', label: 'Use case', required: false }
-      ]
-    },
-    'feature-request': {
-      id: 'feature-request',
-      name: 'Feature Request',
-      fields: [
-        { id: 'message', type: 'textarea', label: 'Describe the feature', required: true },
-        { id: 'use_case', type: 'textarea', label: 'Use case', required: false }
       ]
     }
   };
@@ -125,16 +93,20 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   onSubmit,
   styles = {},
   animation = { enter: 'fade', exit: 'fade', duration: 300 },
-  templateId = 'default',
+  template: customTemplate,
   config = {}
 }) => {
-  const { submitFeedback, isSubmitting, error: submitError } = useFeedback();
+  const { submitFeedback, isSubmitting, error: submitError, openModal, closeModal, isOpen: contextIsOpen, categories } = useFeedback();
   const localizationContext = useContext(LocalizationContext);
   const { t, locale } = localizationContext || { 
     t: (key: string) => key, 
     locale: 'en' as const 
   };
   const dir = locale === 'ar' || locale === 'he' ? 'rtl' : 'ltr';
+
+  // Use props or context values
+  const modalIsOpen = isOpen !== undefined ? isOpen : contextIsOpen;
+  const handleClose = onClose || closeModal;
 
   // State management
   const [attachments, setAttachments] = useState<FeedbackAttachment[]>([]);
@@ -145,8 +117,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const initialFocusRef = useRef<HTMLElement | null>(null);
 
-  // Default categories if not provided in config
-  const categories = config.categories || [
+  // Default categories if not provided
+  const defaultCategories: Category[] = categories || [
     {
       id: 'bug',
       name: 'Bug Report',
@@ -175,7 +147,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   ];
 
   // Get template configuration
-  const template = useMemo(() => getTemplateById(templateId), [templateId]);
+  const template = useMemo(() => 
+    customTemplate || getTemplate(config.defaultTemplate || 'default'), 
+    [customTemplate, config.defaultTemplate]
+  );
 
   // Initialize form data when template changes
   useEffect(() => {
@@ -186,25 +161,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     setFormData(initialData);
   }, [template]);
 
-  // Focus management
-  useEffect(() => {
-    if (isOpen && modalRef.current) {
-      const focusableElement = modalRef.current.querySelector(
-        'input, textarea, button, select'
-      ) as HTMLElement;
-      if (focusableElement) {
-        focusableElement.focus();
-        initialFocusRef.current = focusableElement;
-      }
-    }
-  }, [isOpen]);
-
-  // Show error notifications
-  const shouldShowInternalError = submitError && !isSonnerAvailable();
-
   // Auto-focus on form when opened
   useEffect(() => {
-    if (isOpen) {
+    if (modalIsOpen) {
       template.fields.forEach((field: TemplateField) => {
         if (field.id === 'message') { // Focus on message field by default
           const element = document.getElementById(field.id);
@@ -219,37 +178,45 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
         showInfo("Please provide your feedback in the form below");
       }
     }
-  }, [isOpen, template]);
+  }, [modalIsOpen, template]);
 
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        handleClose();
+      if (e.key === 'Escape' && modalIsOpen) {
+        handleCloseModal();
       }
     };
 
-    if (isOpen) {
+    if (modalIsOpen) {
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     }
-  }, [isOpen]);
+  }, [modalIsOpen]);
 
   // Handle backdrop click
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      handleClose();
+      handleCloseModal();
     }
   }, []);
 
   // Handle close with animation
-  const handleClose = useCallback(() => {
+  const handleCloseModal = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
       setIsClosing(false);
-      onClose();
+      handleClose?.();
     }, animation.duration);
-  }, [onClose, animation.duration]);
+  }, [handleClose, animation.duration]);
+
+  // Handle input changes
+  const handleInputChange = useCallback((fieldId: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+  }, []);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -271,16 +238,25 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     const additionalData = {
       ...formData,
       attachments: attachments.map(att => att.file),
-      template: templateId
+      template: template.id
     };
 
     try {
-      await submitFeedback(message, type as Feedback["type"], additionalData);
-      handleClose();
+      if (onSubmit) {
+        await onSubmit(additionalData);
+      } else {
+        await submitFeedback(message, type as Feedback["type"], additionalData);
+      }
+      handleCloseModal();
     } catch (error) {
       console.error('Submission failed:', error);
     }
-  }, [formData, template.fields, attachments, templateId, submitFeedback, handleClose]);
+  }, [formData, template.fields, attachments, template.id, submitFeedback, handleCloseModal, onSubmit]);
+
+  // Handle attachment changes
+  const handleAttachmentsChange = useCallback((newAttachments: FeedbackAttachment[]) => {
+    setAttachments(newAttachments);
+  }, []);
 
   // Validate form
   const isFormValid = template.fields
@@ -289,19 +265,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       const value = formData[field.id];
       return value && (typeof value === 'string' ? value.trim() : value);
     });
-
-  // Handle input changes
-  const handleInputChange = useCallback((fieldId: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
-  }, []);
-
-  // Handle attachment changes
-  const handleAttachmentsChange = useCallback((newAttachments: FeedbackAttachment[]) => {
-    setAttachments(newAttachments);
-  }, []);
 
   // Render form field
   const renderField = (field: TemplateField) => {
@@ -374,9 +337,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     }
   };
 
-  if (!isOpen && !isClosing) {
+  if (!modalIsOpen && !isClosing) {
     return null;
   }
+
+  // Show error notifications
+  const shouldShowInternalError = submitError && !isSonnerAvailable();
 
   return (
     <div
@@ -402,7 +368,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             {template.name}
           </h2>
           <button
-            onClick={handleClose}
+            onClick={handleCloseModal}
             className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
             aria-label="Close modal"
           >
@@ -434,7 +400,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
             {/* Category selector */}
             <CategorySelector
-              categories={categories}
+              categories={defaultCategories}
               selectedCategory={formData.category || ''}
               selectedSubcategory={formData.subcategory}
               onSelectionChange={(categoryId: string, subcategoryId?: string) => {
@@ -473,7 +439,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
           <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={handleClose}
+              onClick={handleCloseModal}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel

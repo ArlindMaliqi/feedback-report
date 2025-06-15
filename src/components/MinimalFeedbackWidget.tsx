@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FeedbackProvider } from '../contexts/FeedbackContext';
 import { FeedbackButton } from './FeedbackButton';
-import type { FeedbackTheme, FeedbackConfig } from '../types';
+import type { ThemePreference, FeedbackConfig } from '../types';
 
 interface FeedbackData {
   message: string;
@@ -15,7 +15,7 @@ export interface MinimalFeedbackWidgetProps {
   apiEndpoint?: string;
   onSubmit?: (feedback: any) => Promise<void>;
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
-  theme?: FeedbackTheme;
+  theme?: ThemePreference;
   enableShakeDetection?: boolean;
   config?: FeedbackConfig;
 }

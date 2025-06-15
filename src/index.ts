@@ -4,7 +4,8 @@
  */
 
 // Core components (tree-shakeable)
-export { FeedbackProvider, useFeedback } from './components/FeedbackProvider';
+export { FeedbackProvider } from './components/FeedbackProvider';
+export { useFeedback } from './hooks/useFeedback';
 export { FeedbackButton } from './components/FeedbackButton';
 export { FeedbackModal } from './components/FeedbackModal';
 export { OptimizedFeedbackWidget } from './components/OptimizedFeedbackWidget';

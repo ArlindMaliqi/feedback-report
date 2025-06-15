@@ -3,20 +3,22 @@
  * @module components/CategorySelector
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import type { FeedbackCategory, FeedbackSubcategory } from '../types';
+import type { Category, Subcategory } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
 export interface CategorySelectorProps {
   /** Array of available categories */
-  categories: FeedbackCategory[];
+  categories: Category[];
   /** Currently selected category ID */
-  selectedCategory: string;
+  selectedCategory?: string;
   /** Currently selected subcategory ID */
   selectedSubcategory?: string;
   /** Function called when selection changes */
   onSelectionChange: (categoryId: string, subcategoryId?: string) => void;
   /** Whether the selector is disabled */
   disabled?: boolean;
+  /** Optional custom class name for styling */
+  className?: string;
 }
 
 /**
@@ -32,12 +34,14 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   selectedCategory,
   selectedSubcategory,
   onSelectionChange,
-  disabled = false
+  disabled = false,
+  className = ''
 }) => {
   const { theme } = useTheme();
-  const [selectedCat, setSelectedCat] = useState<string>(selectedCategory);
+  const [selectedCat, setSelectedCat] = useState<string>(selectedCategory || '');
   const [selectedSubcat, setSelectedSubcat] = useState<string | undefined>(selectedSubcategory);
-  const [availableSubcategories, setAvailableSubcategories] = useState<FeedbackSubcategory[]>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<Subcategory[]>([]);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(selectedCategory || null);
   
   // Update available subcategories when selected category changes
   useEffect(() => {
@@ -57,7 +61,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   // Update component state when props change (for external control)
   useEffect(() => {
     if (selectedCategory !== selectedCat) {
-      setSelectedCat(selectedCategory);
+      setSelectedCat(selectedCategory || '');
     }
     if (selectedSubcategory !== selectedSubcat) {
       setSelectedSubcat(selectedSubcategory);
@@ -78,6 +82,32 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     setSelectedSubcat(subcategoryId || undefined);
     onSelectionChange(selectedCat, subcategoryId || undefined);
   }, [onSelectionChange, selectedCat]);
+
+  // Handle category expansion/collapse
+  const handleCategorySelect = useCallback((categoryId: string) => {
+    if (disabled) return;
+    
+    setExpandedCategory(expandedCategory === categoryId ? null : categoryId);
+    onSelectionChange(categoryId);
+  }, [expandedCategory, onSelectionChange, disabled]);
+
+  // Handle subcategory selection
+  const handleSubcategorySelect = useCallback((categoryId: string, subcategoryId: string) => {
+    if (disabled) return;
+    onSelectionChange(categoryId, subcategoryId);
+  }, [onSelectionChange, disabled]);
+
+  // Reset subcategory if category changes and subcategory doesn't exist
+  useEffect(() => {
+    if (selectedCategory && selectedSubcategory) {
+      const category = categories.find(c => c.id === selectedCategory);
+      const subcategoryExists = category?.subcategories?.some((s: Subcategory) => s.id === selectedSubcategory);
+      
+      if (!subcategoryExists) {
+        onSelectionChange(selectedCategory);
+      }
+    }
+  }, [selectedCategory, selectedSubcategory, categories, onSelectionChange]);
 
   // Base styles with theme support
   const styles = {
@@ -100,7 +130,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
       backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
       color: theme === 'dark' ? '#e5e7eb' : 'inherit',
     },
-    categoryOption: (category: FeedbackCategory) => ({
+    categoryOption: (category: Category) => ({
       backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
       color: category.color || (theme === 'dark' ? '#e5e7eb' : '#374151'),
     }),
@@ -118,7 +148,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   }
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className={className}>
       <div style={styles.categorySelector}>
         <label htmlFor="feedback-category" style={styles.label}>
           Category *
