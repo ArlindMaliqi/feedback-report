@@ -1,40 +1,37 @@
 'use client';
 
-import type { PropsWithChildren } from 'react';
-import dynamic from 'next/dynamic';
+import React, { type PropsWithChildren, lazy, Suspense } from 'react';
 
-// Dynamic import to avoid SSR issues and module resolution problems
-const OptimizedFeedbackWidget = dynamic(
-	() => import('react-feedback-report-widget').then(mod => ({ 
-		default: mod.OptimizedFeedbackWidget 
-	})),
-	{
-		ssr: false,
-		loading: () => null,
-	}
+// Lazy load the widget to avoid circular dependencies
+const OptimizedFeedbackWidget = lazy(() => 
+  import('./OptimizedFeedbackWidget').then(mod => ({ 
+    default: mod.OptimizedFeedbackWidget 
+  }))
 );
 
 export default function FeedbackReportProvider({
-	children,
+  children,
 }: PropsWithChildren) {
-	const feedbackConfig = {
-		apiEndpoint: '/api/feedback',
-		collectUserAgent: true,
-		collectUrl: true,
-		enableShakeDetection: true,
-		theme: 'system' as const,
-		enableOfflineSupport: true,
-	};
+  const feedbackConfig = {
+    apiEndpoint: '/api/feedback',
+    collectUserAgent: true,
+    collectUrl: true,
+    enableShakeDetection: true,
+    theme: 'system' as const,
+    enableOfflineSupport: true,
+  };
 
-	return (
-		<>
-			{children}
-			<OptimizedFeedbackWidget
-				config={feedbackConfig}
-				showButton={true}
-				enableShakeDetection={true}
-				theme="system"
-			/>
-		</>
-	);
+  return (
+    <>
+      {children}
+      <Suspense fallback={null}>
+        <OptimizedFeedbackWidget
+          config={feedbackConfig}
+          showButton={true}
+          enableShakeDetection={true}
+          theme="system"
+        />
+      </Suspense>
+    </>
+  );
 }

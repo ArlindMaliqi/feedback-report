@@ -1,55 +1,75 @@
-import type { Feedback, FeedbackConfig } from '../types';
+import type { Feedback } from '../types';
 
 /**
- * Validates email format
+ * Validation result interface
  */
-export const validateEmail = (email: string): boolean => {
+export interface ValidationResult {
+  isValid: boolean;
+  errors?: string[];
+  error?: string;
+}
+
+/**
+ * Validate feedback data
+ */
+export const validateFeedback = (feedback: Feedback): ValidationResult => {
+  const errors: string[] = [];
+  
+  // Required fields
+  if (!feedback.message || feedback.message.trim().length === 0) {
+    errors.push('Message is required');
+  }
+  
+  if (!feedback.type) {
+    errors.push('Feedback type is required');
+  }
+  
+  // Message length validation
+  if (feedback.message && feedback.message.length > 10000) {
+    errors.push('Message is too long (max 10,000 characters)');
+  }
+  
+  // Email validation if provided
+  if (feedback.email && !isValidEmail(feedback.email)) {
+    errors.push('Invalid email format');
+  }
+  
+  // URL validation if provided
+  if (feedback.url && !isValidUrl(feedback.url)) {
+    errors.push('Invalid URL format');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors: errors.length > 0 ? errors : undefined
+  };
+};
+
+/**
+ * Validate email format
+ */
+export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
 /**
- * Validates feedback message
+ * Validate URL format
  */
-export const validateMessage = (message: string): boolean => {
-  return message.trim().length > 0;
+export const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 /**
- * Validates file size
+ * Sanitize user input
  */
-export const validateFileSize = (file: File, maxSize: number): boolean => {
-  return file.size <= maxSize;
-};
-
-/**
- * Validates file type
- */
-export const validateFileType = (file: File, allowedTypes: string[]): boolean => {
-  return allowedTypes.some(type => file.type.startsWith(type));
-};
-
-/**
- * Validates complete feedback object
- */
-export const validateFeedback = (feedback: Partial<Feedback>, config: FeedbackConfig): string[] => {
-  const errors: string[] = [];
-
-  if (!feedback.message || !validateMessage(feedback.message)) {
-    errors.push('Message is required');
-  }
-
-  if (config.collectUserIdentity && config.requiredIdentityFields) {
-    config.requiredIdentityFields.forEach(field => {
-      if (!feedback.user?.[field as keyof typeof feedback.user]) {
-        errors.push(`${field} is required`);
-      }
-    });
-  }
-
-  if (feedback.user?.email && !validateEmail(feedback.user.email)) {
-    errors.push('Invalid email format');
-  }
-
-  return errors;
+export const sanitizeInput = (input: string): string => {
+  return input
+    .replace(/[<>]/g, '') // Remove HTML tags
+    .trim();
 };

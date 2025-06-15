@@ -2,8 +2,8 @@
  * User identity fields component for feedback collection
  * @module components/UserIdentityFields
  */
-import React, { useEffect, useState } from 'react';
-import { UserIdentity, FeedbackConfig } from '../types';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { UserIdentity, FeedbackConfig } from '../types';
 import { getUserIdentity, saveUserIdentity } from '../utils/offlineStorage';
 import { useTheme } from '../hooks/useTheme';
 
@@ -22,6 +22,8 @@ interface UserIdentityFieldsProps {
   >;
   /** Whether the fields are disabled */
   disabled?: boolean;
+  /** Whether the avatar field should be shown */
+  showAvatar?: boolean;
 }
 
 /**
@@ -36,7 +38,8 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
   value = {},
   onChange,
   config = {},
-  disabled = false
+  disabled = false,
+  showAvatar = false,
 }) => {
   const { theme } = useTheme();
   const [rememberIdentity, setRememberIdentity] = useState<boolean>(
@@ -155,6 +158,23 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
           placeholder="your.email@example.com"
         />
       </div>
+
+      {showAvatar && (
+        <div style={styles.fieldGroup}>
+          <label htmlFor="feedback-user-avatar" style={styles.label}>
+            Avatar URL (Optional)
+          </label>
+          <input
+            type="url"
+            id="feedback-user-avatar"
+            value={value.avatar || ''}
+            onChange={(e) => handleFieldChange('avatar', e.target.value)}
+            style={styles.input}
+            disabled={disabled}
+            placeholder="https://example.com/avatar.jpg"
+          />
+        </div>
+      )}
       
       {config.rememberUserIdentity !== false && (
         <div style={styles.checkboxContainer}>

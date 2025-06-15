@@ -1,106 +1,304 @@
 /**
- * Issue tracker integration utilities for creating issues from feedback
+ * Issue tracker integration utilities
  * @module issueTracker
  */
-import type { 
-  Feedback
-} from '../../types';
-import { showError as reportError, showSuccess as reportSuccess } from '../notifications';
+import type { IssueTrackerConfig, Feedback } from '../../types';
 
 /**
- * Configuration for GitHub issue tracker
+ * GitHub issue creation
  */
-export interface GitHubIssueConfig {
-  provider: 'github';
-  apiToken: string;
-  owner: string;
-  repository: string;
-  labels?: string[];
-}
-
-/**
- * Configuration for Jira issue tracker
- */
-export interface JiraIssueConfig {
-  provider: 'jira';
-  apiToken: string;
-  baseUrl: string;
-  projectKey: string;
-  issueType: string;
-}
-
-/**
- * Configuration for Azure DevOps
- */
-export interface AzureDevOpsConfig {
-  provider: 'azure-devops';
-  apiToken: string;
-  organization: string;
-  project: string;
-  workItemType: string;
-}
-
-/**
- * Create issue based on provider type
- */
-export const createIssue = async (
+export const createGitHubIssue = async (
   feedback: Feedback,
-  config: GitHubIssueConfig | JiraIssueConfig | AzureDevOpsConfig
-): Promise<void> => {
+  config: IssueTrackerConfig
+): Promise<{ success: boolean; issueUrl?: string; error?: string }> => {
+  if (!config.apiToken || !config.owner || !config.repository) {
+    return { success: false, error: 'Missing GitHub configuration' };
+  }
+
+  const issueTitle = `[Feedback] ${feedback.type}: ${feedback.message.substring(0, 100)}${feedback.message.length > 100 ? '...' : ''}`;
+  
+  const issueBody = `
+## Feedback Details
+
+**Type:** ${feedback.type}
+**Category:** ${feedback.category || 'Not specified'}
+**Subcategory:** ${feedback.subcategory || 'Not specified'}
+**Priority:** ${feedback.priority || 'Not specified'}
+
+## Description
+
+${feedback.message}
+
+## User Information
+
+${feedback.user?.name ? `**Name:** ${feedback.user.name}` : ''}
+${feedback.user?.email ? `**Email:** ${feedback.user.email}` : ''}
+
+## Technical Details
+
+**URL:** ${feedback.url || 'Not provided'}
+**User Agent:** ${feedback.userAgent || 'Not provided'}
+**Timestamp:** ${feedback.timestamp.toISOString()}
+**Feedback ID:** ${feedback.id}
+
+${feedback.attachments && feedback.attachments.length > 0 ? `\n## Attachments\n\n${feedback.attachments.length} file(s) attached` : ''}
+  `.trim();
+
   try {
-    switch (config.provider) {
-      case 'github':
-        await createGitHubIssue(feedback, config as GitHubIssueConfig);
-        break;
-      case 'jira':
-        await createJiraIssue(feedback, config as JiraIssueConfig);
-        break;
-      case 'azure-devops':
-        await createAzureDevOpsIssue(feedback, config as AzureDevOpsConfig);
-        break;
-      default: {
-        // Use a type assertion to handle the exhaustive check properly
-        const _exhaustiveCheck: never = config as never;
-        throw new Error(`Unsupported issue tracker: ${JSON.stringify(_exhaustiveCheck)}`);
-      }
+    const response = await fetch(`https://api.github.com/repos/${config.owner}/${config.repository}/issues`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: issueTitle,
+        body: issueBody,
+        labels: [...(config.labels || []), `type:${feedback.type}`, 'feedback']
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.message || `HTTP ${response.status}` };
     }
-    
-    reportSuccess('Issue created successfully');
+
+    const issue = await response.json();
+    return { success: true, issueUrl: issue.html_url };
   } catch (error) {
-    reportError('Failed to create issue');
-    console.error('Issue creation failed:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 
 /**
- * Create GitHub issue
- */
-export const createGitHubIssue = async (
-  feedback: Feedback,
-  config: GitHubIssueConfig
-): Promise<void> => {
-  // Implementation for GitHub issue creation
-  console.log('Creating GitHub issue for feedback:', feedback.id);
-};
-
-/**
- * Create Jira issue
+ * Jira issue creation
  */
 export const createJiraIssue = async (
   feedback: Feedback,
-  config: JiraIssueConfig
-): Promise<void> => {
-  // Implementation for Jira issue creation
-  console.log('Creating Jira issue for feedback:', feedback.id);
+  config: IssueTrackerConfig
+): Promise<{ success: boolean; issueUrl?: string; error?: string }> => {
+  if (!config.apiToken || !config.baseUrl || !config.project) {
+    return { success: false, error: 'Missing Jira configuration' };
+  }
+
+  const issueData = {
+    fields: {
+      project: { key: config.project },
+      summary: `[Feedback] ${feedback.type}: ${feedback.message.substring(0, 100)}${feedback.message.length > 100 ? '...' : ''}`,
+      description: {
+        type: 'doc',
+        version: 1,
+        content: [
+          {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: 'Feedback Details' }]
+          },
+          {
+            type: 'paragraph',
+            content: [
+              { type: 'text', text: `Type: ${feedback.type}`, marks: [{ type: 'strong' }] },
+              { type: 'hardBreak' },
+              { type: 'text', text: `Category: ${feedback.category || 'Not specified'}`, marks: [{ type: 'strong' }] },
+              { type: 'hardBreak' },
+              { type: 'text', text: `Priority: ${feedback.priority || 'Not specified'}`, marks: [{ type: 'strong' }] }
+            ]
+          },
+          {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: 'Description' }]
+          },
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: feedback.message }]
+          }
+        ]
+      },
+      issuetype: { name: 'Task' },
+      priority: { name: feedback.priority === 'critical' ? 'Highest' : feedback.priority === 'high' ? 'High' : 'Medium' },
+      labels: [...(config.labels || []), 'feedback', feedback.type]
+    }
+  };
+
+  try {
+    const response = await fetch(`${config.baseUrl}/rest/api/3/issue`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiToken}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(issueData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.errorMessages?.[0] || `HTTP ${response.status}` };
+    }
+
+    const issue = await response.json();
+    return { success: true, issueUrl: `${config.baseUrl}/browse/${issue.key}` };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 };
 
 /**
- * Create Azure DevOps work item
+ * Azure DevOps work item creation
  */
 export const createAzureDevOpsIssue = async (
   feedback: Feedback,
-  config: AzureDevOpsConfig
-): Promise<void> => {
-  // Implementation for Azure DevOps work item creation
-  console.log('Creating Azure DevOps work item for feedback:', feedback.id);
+  config: IssueTrackerConfig
+): Promise<{ success: boolean; issueUrl?: string; error?: string }> => {
+  if (!config.apiToken || !config.baseUrl || !config.project) {
+    return { success: false, error: 'Missing Azure DevOps configuration' };
+  }
+
+  const workItemData = [
+    {
+      op: 'add',
+      path: '/fields/System.Title',
+      value: `[Feedback] ${feedback.type}: ${feedback.message.substring(0, 100)}${feedback.message.length > 100 ? '...' : ''}`
+    },
+    {
+      op: 'add',
+      path: '/fields/System.Description',
+      value: `<h2>Feedback Details</h2>
+        <p><strong>Type:</strong> ${feedback.type}</p>
+        <p><strong>Category:</strong> ${feedback.category || 'Not specified'}</p>
+        <p><strong>Priority:</strong> ${feedback.priority || 'Not specified'}</p>
+        <h2>Description</h2>
+        <p>${feedback.message.replace(/\n/g, '<br>')}</p>
+        <h2>Technical Details</h2>
+        <p><strong>URL:</strong> ${feedback.url || 'Not provided'}</p>
+        <p><strong>Timestamp:</strong> ${feedback.timestamp.toISOString()}</p>
+        <p><strong>Feedback ID:</strong> ${feedback.id}</p>`
+    },
+    {
+      op: 'add',
+      path: '/fields/System.Tags',
+      value: [...(config.labels || []), 'feedback', feedback.type].join(';')
+    }
+  ];
+
+  try {
+    const response = await fetch(`${config.baseUrl}/${config.project}/_apis/wit/workitems/$Bug?api-version=7.0`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`:${config.apiToken}`)}`,
+        'Content-Type': 'application/json-patch+json'
+      },
+      body: JSON.stringify(workItemData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.message || `HTTP ${response.status}` };
+    }
+
+    const workItem = await response.json();
+    return { success: true, issueUrl: workItem._links.html.href };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+/**
+ * GitLab issue creation
+ */
+export const createGitLabIssue = async (
+  feedback: Feedback,
+  config: IssueTrackerConfig
+): Promise<{ success: boolean; issueUrl?: string; error?: string }> => {
+  if (!config.apiToken || !config.baseUrl || !config.project) {
+    return { success: false, error: 'Missing GitLab configuration' };
+  }
+
+  const issueData = {
+    title: `[Feedback] ${feedback.type}: ${feedback.message.substring(0, 100)}${feedback.message.length > 100 ? '...' : ''}`,
+    description: `## Feedback Details
+
+**Type:** ${feedback.type}
+**Category:** ${feedback.category || 'Not specified'}
+**Priority:** ${feedback.priority || 'Not specified'}
+
+## Description
+
+${feedback.message}
+
+## Technical Details
+
+**URL:** ${feedback.url || 'Not provided'}
+**Timestamp:** ${feedback.timestamp.toISOString()}
+**Feedback ID:** ${feedback.id}`,
+    labels: [...(config.labels || []), 'feedback', feedback.type].join(',')
+  };
+
+  try {
+    const response = await fetch(`${config.baseUrl}/api/v4/projects/${config.project}/issues`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.apiToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(issueData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.message || `HTTP ${response.status}` };
+    }
+
+    const issue = await response.json();
+    return { success: true, issueUrl: issue.web_url };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+/**
+ * Main issue creation function
+ */
+export const createIssue = async (
+  feedback: Feedback,
+  config: IssueTrackerConfig
+): Promise<{ success: boolean; issueUrl?: string; error?: string }> => {
+  switch (config.provider) {
+    case 'github':
+      return createGitHubIssue(feedback, config);
+    case 'jira':
+      return createJiraIssue(feedback, config);
+    case 'azure-devops':
+      return createAzureDevOpsIssue(feedback, config);
+    case 'gitlab':
+      return createGitLabIssue(feedback, config);
+    case 'custom':
+      // Custom endpoint for issue creation
+      if (config.apiEndpoint) {
+        try {
+          const response = await fetch(config.apiEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...config.headers
+            },
+            body: JSON.stringify({ feedback, config })
+          });
+
+          if (!response.ok) {
+            return { success: false, error: `HTTP ${response.status}` };
+          }
+
+          const result = await response.json();
+          return { success: true, issueUrl: result.issueUrl };
+        } catch (error) {
+          return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+      }
+      return { success: false, error: 'Custom endpoint not configured' };
+    default:
+      return { success: false, error: `Unknown provider: ${config.provider}` };
+  }
 };

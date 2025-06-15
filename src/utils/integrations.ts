@@ -3,6 +3,10 @@
  * @module utils/integrations
  */
 import type { Feedback, FeedbackConfig } from '../types';
+import { processFeedbackAnalytics } from './integrations/analytics';
+import { createIssue } from './integrations/issueTracker';
+import { sendNotification } from './integrations/notifications';
+import { sendWebhooks } from './integrations/webhooks';
 
 /**
  * Process integrations for feedback submission
@@ -17,22 +21,53 @@ export const processIntegrations = async (
 
   // Analytics integration
   if (config.analytics) {
-    promises.push(processAnalytics(feedback, config.analytics));
+    promises.push(
+      processFeedbackAnalytics(feedback, config.analytics)
+        .catch(error => console.error('Analytics integration failed:', error))
+    );
   }
 
   // Issue tracker integration
   if (config.issueTracker) {
-    promises.push(processIssueTracker(feedback, config.issueTracker));
+    promises.push(
+      createIssue(feedback, config.issueTracker)
+        .then(result => {
+          if (!result.success) {
+            console.error('Issue creation failed:', result.error);
+          } else {
+            console.log('Issue created successfully:', result.issueUrl);
+          }
+        })
+        .catch(error => console.error('Issue tracker integration failed:', error))
+    );
   }
 
   // Webhook integration
-  if (config.webhooks) {
-    promises.push(processWebhooks(feedback, config.webhooks));
+  if (config.webhooks && config.webhooks.length > 0) {
+    promises.push(
+      sendWebhooks(feedback, config.webhooks, 'feedback.created')
+        .then(results => {
+          results.forEach(({ config: webhookConfig, result }) => {
+            if (!result.success) {
+              console.error(`Webhook failed for ${webhookConfig.url}:`, result.error);
+            }
+          });
+        })
+        .catch(error => console.error('Webhook integration failed:', error))
+    );
   }
 
   // Notification integration
   if (config.notifications) {
-    promises.push(processNotifications(feedback, config.notifications));
+    promises.push(
+      sendNotification(feedback, config.notifications)
+        .then(result => {
+          if (!result.success) {
+            console.error('Notification failed:', result.error);
+          }
+        })
+        .catch(error => console.error('Notification integration failed:', error))
+    );
   }
 
   await Promise.allSettled(promises);
@@ -41,67 +76,33 @@ export const processIntegrations = async (
 /**
  * Process vote integrations
  * @param feedbackId - ID of the feedback being voted on
+ * @param vote - Type of vote ('up' or 'down')
  * @param config - Configuration with integration settings
  */
 export const processVoteIntegrations = async (
   feedbackId: string,
+  vote: 'up' | 'down',
   config: FeedbackConfig
 ): Promise<void> => {
+  const promises: Promise<void>[] = [];
+
   // Analytics for votes
   if (config.analytics) {
-    try {
-      // Track vote event
-      console.log('Vote tracked for feedback:', feedbackId);
-    } catch (error) {
-      console.error('Failed to track vote:', error);
-    }
+    promises.push(
+      import('./integrations/analytics')
+        .then(({ processVoteAnalytics }) => processVoteAnalytics(feedbackId, config.analytics!))
+        .catch(error => console.error('Vote analytics failed:', error))
+    );
   }
-};
 
-/**
- * Process analytics integration
- */
-const processAnalytics = async (feedback: Feedback, _analyticsConfig: any): Promise<void> => {
-  try {
-    // Implementation would depend on the analytics provider
-    console.log('Analytics processed for feedback:', feedback.id);
-  } catch (error) {
-    console.error('Analytics integration failed:', error);
+  // Webhook for votes
+  if (config.webhooks && config.webhooks.length > 0) {
+    promises.push(
+      import('./integrations/webhooks')
+        .then(({ sendVoteWebhook }) => sendVoteWebhook(feedbackId, vote, config.webhooks!))
+        .catch(error => console.error('Vote webhook failed:', error))
+    );
   }
-};
 
-/**
- * Process issue tracker integration
- */
-const processIssueTracker = async (feedback: Feedback, _issueConfig: any): Promise<void> => {
-  try {
-    // Implementation would create issues in GitHub, Jira, etc.
-    console.log('Issue tracker processed for feedback:', feedback.id);
-  } catch (error) {
-    console.error('Issue tracker integration failed:', error);
-  }
-};
-
-/**
- * Process webhook integration
- */
-const processWebhooks = async (feedback: Feedback, _webhookConfig: any): Promise<void> => {
-  try {
-    // Implementation would send webhooks to configured endpoints
-    console.log('Webhooks processed for feedback:', feedback.id);
-  } catch (error) {
-    console.error('Webhook integration failed:', error);
-  }
-};
-
-/**
- * Process notification integration
- */
-const processNotifications = async (feedback: Feedback, _notificationConfig: any): Promise<void> => {
-  try {
-    // Implementation would send notifications to Slack, Teams, etc.
-    console.log('Notifications processed for feedback:', feedback.id);
-  } catch (error) {
-    console.error('Notification integration failed:', error);
-  }
+  await Promise.allSettled(promises);
 };

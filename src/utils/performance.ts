@@ -1,176 +1,68 @@
 /**
- * Performance monitoring and optimization utilities
- * @module utils/performance
+ * Performance monitoring utilities
  */
-import React from 'react';
 
-/**
- * Performance metrics interface
- */
-interface PerformanceMetrics {
-  /** Time to first paint */
-  firstPaint?: number;
-  /** Time to first contentful paint */
-  firstContentfulPaint?: number;
-  /** Largest contentful paint */
-  largestContentfulPaint?: number;
-  /** First input delay */
-  firstInputDelay?: number;
-  /** Cumulative layout shift */
-  cumulativeLayoutShift?: number;
-  /** Bundle load time */
-  bundleLoadTime?: number;
-  /** Component mount time */
-  componentMountTime?: number;
-}
-
-/**
- * Performance monitor class for tracking widget performance
- */
 export class PerformanceMonitor {
-  private metrics: PerformanceMetrics = {};
-  private observers: PerformanceObserver[] = [];
+  private static instance: PerformanceMonitor;
+  private metrics: Map<string, number> = new Map();
 
-  constructor() {
-    this.initializeObservers();
-  }
-
-  /**
-   * Initialize performance observers
-   */
-  private initializeObservers() {
-    if (typeof window === 'undefined' || !window.PerformanceObserver) {
-      return;
+  static getInstance(): PerformanceMonitor {
+    if (!PerformanceMonitor.instance) {
+      PerformanceMonitor.instance = new PerformanceMonitor();
     }
-
-    // Core Web Vitals observers
-    try {
-      // Largest Contentful Paint
-      const lcpObserver = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        const lastEntry = entries[entries.length - 1] as any;
-        this.metrics.largestContentfulPaint = lastEntry.startTime;
-      });
-      lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
-      this.observers.push(lcpObserver);
-
-      // First Input Delay
-      const fidObserver = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        entries.forEach((entry: any) => {
-          this.metrics.firstInputDelay = entry.processingStart - entry.startTime;
-        });
-      });
-      fidObserver.observe({ type: 'first-input', buffered: true });
-      this.observers.push(fidObserver);
-
-      // Cumulative Layout Shift
-      const clsObserver = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        entries.forEach((entry: any) => {
-          if (!entry.hadRecentInput) {
-            this.metrics.cumulativeLayoutShift = 
-              (this.metrics.cumulativeLayoutShift || 0) + entry.value;
-          }
-        });
-      });
-      clsObserver.observe({ type: 'layout-shift', buffered: true });
-      this.observers.push(clsObserver);
-
-    } catch (error) {
-      console.warn('Failed to initialize performance observers:', error);
-    }
+    return PerformanceMonitor.instance;
   }
 
-  /**
-   * Record component mount time
-   */
-  recordComponentMount(startTime: number) {
-    this.metrics.componentMountTime = performance.now() - startTime;
+  // Track component render times
+  trackRender(componentName: string, renderTime: number) {
+    this.metrics.set(`render_${componentName}`, renderTime);
   }
 
-  /**
-   * Record bundle load time
-   */
-  recordBundleLoad(startTime: number) {
-    this.metrics.bundleLoadTime = performance.now() - startTime;
+  // Track API response times
+  trackApiCall(endpoint: string, duration: number) {
+    this.metrics.set(`api_${endpoint}`, duration);
   }
 
-  /**
-   * Get current performance metrics
-   */
-  getMetrics(): PerformanceMetrics {
-    // Add paint timing metrics
-    if (typeof window !== 'undefined' && window.performance) {
-      const paintEntries = performance.getEntriesByType('paint');
-      paintEntries.forEach((entry) => {
-        if (entry.name === 'first-paint') {
-          this.metrics.firstPaint = entry.startTime;
-        } else if (entry.name === 'first-contentful-paint') {
-          this.metrics.firstContentfulPaint = entry.startTime;
+  // Track bundle load times
+  trackBundleLoad(bundleName: string, loadTime: number) {
+    this.metrics.set(`bundle_${bundleName}`, loadTime);
+  }
+
+  // Get performance report
+  getReport() {
+    return Object.fromEntries(this.metrics);
+  }
+
+  // Send metrics to analytics
+  async sendMetrics() {
+    const report = this.getReport();
+    
+    // Send to your analytics service
+    if (typeof window !== 'undefined' && window.gtag) {
+      Object.entries(report).forEach(([metric, value]) => {
+        if (window.gtag) {
+          window.gtag('event', 'performance_metric', {
+            custom_parameter: metric,
+            value: value
+          });
         }
       });
     }
-
-    return { ...this.metrics };
-  }
-
-  /**
-   * Report metrics to analytics (if configured)
-   */
-  reportMetrics(analyticsConfig?: any) {
-    const metrics = this.getMetrics();
-    
-    if (analyticsConfig && typeof analyticsConfig.trackEvent === 'function') {
-      analyticsConfig.trackEvent('feedback_widget_performance', {
-        ...metrics,
-        userAgent: navigator.userAgent,
-        timestamp: Date.now()
-      });
-    }
-  }
-
-  /**
-   * Clean up observers
-   */
-  destroy() {
-    this.observers.forEach(observer => observer.disconnect());
-    this.observers = [];
   }
 }
 
-/**
- * React hook for performance monitoring
- */
+// React hook for performance monitoring
 export const usePerformanceMonitor = () => {
-  const [monitor] = React.useState(() => new PerformanceMonitor());
+  const monitor = PerformanceMonitor.getInstance();
   
-  React.useEffect(() => {
-    return () => monitor.destroy();
-  }, [monitor]);
-
-  return monitor;
-};
-
-/**
- * Higher-order component for performance monitoring
- */
-export const withPerformanceMonitoring = <P extends object>(
-  WrappedComponent: React.ComponentType<P>
-): React.ComponentType<P> => {
-  const WithPerformanceMonitoring: React.FC<P> = (props: P) => {
-    const monitor = usePerformanceMonitor();
-    const mountTime = React.useRef(performance.now());
-
-    React.useEffect(() => {
-      monitor.recordComponentMount(mountTime.current);
-    }, [monitor]);
-
-    return React.createElement(WrappedComponent, props);
+  const trackComponentRender = (componentName: string) => {
+    const startTime = performance.now();
+    
+    return () => {
+      const endTime = performance.now();
+      monitor.trackRender(componentName, endTime - startTime);
+    };
   };
 
-  WithPerformanceMonitoring.displayName = 
-    `withPerformanceMonitoring(${WrappedComponent.displayName || WrappedComponent.name})`;
-
-  return WithPerformanceMonitoring;
+  return { trackComponentRender, monitor };
 };

@@ -12,6 +12,8 @@ export const ANALYTICS_EVENTS = {
   FEEDBACK_SUBMITTED: 'feedback_submitted',
   FEEDBACK_VIEWED: 'feedback_viewed',
   FEEDBACK_VOTED: 'feedback_voted',
+  FEEDBACK_MODAL_OPENED: 'feedback_modal_opened',
+  FEEDBACK_MODAL_CLOSED: 'feedback_modal_closed',
 };
 
 /**
@@ -50,26 +52,24 @@ const trackWithGoogleAnalytics = (
   config: AnalyticsConfig
 ): void => {
   try {
-    const ga = (window as any).ga;
     const gtag = (window as any).gtag;
+    const ga = (window as any).ga;
     
-    // Convert data to GA-friendly format (string values for properties)
-    const gaData: Record<string, string> = {};
-    Object.entries(eventData).forEach(([key, value]) => {
-      if (typeof value === 'object') {
-        gaData[key] = JSON.stringify(value);
-      } else {
-        gaData[key] = String(value);
-      }
-    });
-    
-    // Try gtag (GA4) first
     if (typeof gtag === 'function') {
-      gtag('event', eventName, gaData);
-    } 
-    // Fall back to Universal Analytics
-    else if (typeof ga === 'function') {
-      ga('send', 'event', 'Feedback', eventName, JSON.stringify(gaData));
+      // GA4 tracking
+      gtag('event', eventName, {
+        event_category: 'Feedback',
+        event_label: eventData.feedbackType || 'unknown',
+        custom_map: {
+          feedback_id: eventData.feedbackId,
+          feedback_type: eventData.feedbackType,
+          feedback_category: eventData.category
+        },
+        ...eventData
+      });
+    } else if (typeof ga === 'function') {
+      // Universal Analytics tracking
+      ga('send', 'event', 'Feedback', eventName, eventData.feedbackType, eventData.timestamp);
     }
   } catch (error) {
     console.error('Error tracking with Google Analytics:', error);
@@ -107,15 +107,91 @@ const trackWithMixpanel = (
 };
 
 /**
- * Track feedback event
+ * Sends event to custom analytics endpoint
+ */
+const trackWithCustomEndpoint = async (
+  eventName: string,
+  eventData: Record<string, any>,
+  config: AnalyticsConfig
+): Promise<void> => {
+  if (!config.customEndpoint) return;
+
+  try {
+    const response = await fetch(config.customEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` })
+      },
+      body: JSON.stringify({
+        event: eventName,
+        data: eventData,
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('Error tracking with custom endpoint:', error);
+  }
+};
+
+/**
+ * Main tracking function that routes to appropriate provider
  */
 export const trackFeedbackEvent = async (
   feedback: Feedback,
   config: AnalyticsConfig
 ): Promise<void> => {
+  if (!config.trackEvents) return;
+
+  const eventName = config.eventName || ANALYTICS_EVENTS.FEEDBACK_SUBMITTED;
+  const eventData = {
+    feedbackId: feedback.id,
+    feedbackType: feedback.type,
+    category: feedback.category,
+    subcategory: feedback.subcategory,
+    timestamp: feedback.timestamp.getTime(),
+    url: feedback.url,
+    hasAttachments: feedback.attachments && feedback.attachments.length > 0,
+    votes: feedback.votes || 0
+  };
+
   try {
-    // Track the feedback event
-    console.log('Tracking feedback event:', feedback.id);
+    switch (config.provider) {
+      case 'google-analytics':
+        if (isGoogleAnalyticsAvailable()) {
+          trackWithGoogleAnalytics(eventName, eventData, config);
+        } else {
+          console.warn('Google Analytics not available');
+        }
+        break;
+
+      case 'segment':
+        if (isSegmentAvailable()) {
+          trackWithSegment(eventName, eventData);
+        } else {
+          console.warn('Segment not available');
+        }
+        break;
+
+      case 'mixpanel':
+        if (isMixpanelAvailable()) {
+          trackWithMixpanel(eventName, eventData);
+        } else {
+          console.warn('Mixpanel not available');
+        }
+        break;
+
+      case 'custom':
+        await trackWithCustomEndpoint(eventName, eventData, config);
+        break;
+
+      default:
+        console.warn(`Unknown analytics provider: ${config.provider}`);
+    }
   } catch (error) {
     reportError('Failed to track feedback event');
     console.error('Analytics tracking failed:', error);
@@ -123,49 +199,34 @@ export const trackFeedbackEvent = async (
 };
 
 /**
- * Tracks a feedback submission event
- * 
- * @param feedback - The submitted feedback
- * @param config - Analytics configuration
+ * Track specific events
  */
 export const trackFeedbackSubmission = (feedback: Feedback, config: AnalyticsConfig): void => {
-  if (!config) return;
-  
-  const eventName = config.eventName || ANALYTICS_EVENTS.FEEDBACK_SUBMITTED;
-  
-  // Extract relevant data for tracking
-  const eventData = {
-    feedbackId: feedback.id,
-    feedbackType: feedback.type,
-    category: feedback.category,
-    subcategory: feedback.subcategory,
-    timestamp: feedback.timestamp,
-    url: feedback.url,
-    // Don't include sensitive data like the message content or user identity
-  };
-  
-  // Use the correct function signature with 2 parameters
-  trackFeedbackEvent(feedback, config);
+  trackFeedbackEvent(feedback, { ...config, eventName: ANALYTICS_EVENTS.FEEDBACK_SUBMITTED });
 };
 
-/**
- * Tracks a feedback voting event
- * 
- * @param feedbackId - ID of the feedback that was voted on
- * @param config - Analytics configuration 
- */
 export const trackFeedbackVote = (feedbackId: string, config: AnalyticsConfig): void => {
-  if (config.provider === 'google-analytics' && window.gtag) {
-    window.gtag('event', 'feedback_vote', {
-      feedback_id: feedbackId,
-      event_category: 'engagement',
-      event_label: feedbackId,
-      // Remove references to undefined feedback variable
-      timestamp: new Date().getTime()
-    });
-  }
+  const mockFeedback: Feedback = {
+    id: feedbackId,
+    message: '',
+    type: 'other',
+    timestamp: new Date(),
+    status: 'open'
+  };
   
-  console.log('Tracked vote for feedback:', feedbackId);
+  trackFeedbackEvent(mockFeedback, { ...config, eventName: ANALYTICS_EVENTS.FEEDBACK_VOTED });
+};
+
+export const trackModalOpened = (config: AnalyticsConfig): void => {
+  const mockFeedback: Feedback = {
+    id: 'modal-event',
+    message: '',
+    type: 'other',
+    timestamp: new Date(),
+    status: 'open'
+  };
+  
+  trackFeedbackEvent(mockFeedback, { ...config, eventName: ANALYTICS_EVENTS.FEEDBACK_MODAL_OPENED });
 };
 
 /**
@@ -175,15 +236,6 @@ export const processFeedbackAnalytics = async (
   feedback: Feedback,
   config: AnalyticsConfig
 ): Promise<void> => {
-  const eventData = {
-    feedback_id: feedback.id,
-    feedback_type: feedback.type,
-    user_agent: feedback.userAgent,
-    url: feedback.url,
-    timestamp: feedback.timestamp
-  };
-
-  // Track feedback submission using the correct signature
   await trackFeedbackEvent(feedback, config);
 };
 
@@ -194,22 +246,5 @@ export const processVoteAnalytics = async (
   feedbackId: string,
   config: AnalyticsConfig
 ): Promise<void> => {
-  const eventData = {
-    feedback_id: feedbackId,
-    action: 'vote',
-    timestamp: Date.now()
-  };
-
-  // Create a mock feedback object for tracking
-  const anotherMockFeedback: Feedback = {
-    id: 'another-mock',
-    message: 'Another mock feedback',
-    type: 'feature',
-    timestamp: new Date(),
-    status: 'open', // Add missing status property
-    votes: 5
-  };
-
-  // Track vote event using the correct signature
-  await trackFeedbackEvent(anotherMockFeedback, config);
+  trackFeedbackVote(feedbackId, config);
 };

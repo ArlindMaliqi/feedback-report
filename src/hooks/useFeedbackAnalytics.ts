@@ -69,12 +69,12 @@ interface FeedbackStatistics {
  * ```
  */
 export function useFeedbackAnalytics() {
-  const { feedbacks } = useFeedback();
+  const { feedbacks = [] } = useFeedback();
   
   // Calculate overall statistics
   const statistics = useMemo<FeedbackStatistics>(() => {
     // Skip calculation if no feedback
-    if (feedbacks.length === 0) {
+    if (!feedbacks || feedbacks.length === 0) {
       return {
         totalCount: 0,
         countsByType: { bug: 0, feature: 0, improvement: 0, other: 0, total: 0 },
@@ -160,7 +160,7 @@ export function useFeedbackAnalytics() {
       averageLength
     };
   }, [feedbacks]);
-  
+
   /**
    * Calculates feedback trends over time
    * @param days - Number of days to analyze
@@ -179,20 +179,22 @@ export function useFeedbackAnalytics() {
     }
     
     // Count feedback by date
-    feedbacks.forEach(feedback => {
-      const date = new Date(feedback.timestamp);
-      const dateString = date.toISOString().split('T')[0];
-      
-      // Only include dates within the specified range
-      const daysAgo = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysAgo <= days && result[dateString] !== undefined) {
-        result[dateString]++;
-      }
-    });
+    if (feedbacks) {
+      feedbacks.forEach(feedback => {
+        const date = new Date(feedback.timestamp);
+        const dateString = date.toISOString().split('T')[0];
+        
+        // Only include dates within the specified range
+        const daysAgo = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysAgo <= days && result[dateString] !== undefined) {
+          result[dateString]++;
+        }
+      });
+    }
     
     return result;
   };
-  
+
   /**
    * Calculates the distribution of feedback by a property
    * @param property - Property to group by
@@ -201,31 +203,33 @@ export function useFeedbackAnalytics() {
   const getFeedbackDistribution = <T extends keyof Feedback>(property: T) => {
     const distribution: Record<string, number> = {};
     
-    feedbacks.forEach(feedback => {
-      const value = String(feedback[property] || 'unknown');
-      distribution[value] = (distribution[value] || 0) + 1;
-    });
+    if (feedbacks) {
+      feedbacks.forEach(feedback => {
+        const value = String(feedback[property] || 'unknown');
+        distribution[value] = (distribution[value] || 0) + 1;
+      });
+    }
     
     return distribution;
   };
-  
+
   // New callback to get pending count
   const getPendingCount = useCallback(() => {
-    return feedbacks.filter(feedback => 
-      feedback.submissionStatus === 'pending' // Property exists now
+    return (feedbacks || []).filter(feedback => 
+      feedback.submissionStatus === 'pending'
     ).length;
   }, [feedbacks]);
-  
+
   return {
     statistics,
     getRecentTrends,
     getFeedbackDistribution,
-    getPendingCount, // Expose new callback
+    getPendingCount,
     // Helper method to get feedback items by type
-    getByType: (type: Feedback['type']) => feedbacks.filter(f => f.type === type),
+    getByType: (type: Feedback['type']) => (feedbacks || []).filter(f => f.type === type),
     // Helper method to calculate votes distribution
     getVotesDistribution: () => {
-      return feedbacks.reduce((acc, item) => {
+      return (feedbacks || []).reduce((acc, item) => {
         const votes = item.votes || 0;
         acc[votes] = (acc[votes] || 0) + 1;
         return acc;

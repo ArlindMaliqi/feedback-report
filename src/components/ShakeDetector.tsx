@@ -2,7 +2,8 @@
  * Shake detector component using shake.js
  * @module components/ShakeDetector
  */
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
+import { useFeedback } from "../hooks/useFeedback";
 
 /**
  * Props for the ShakeDetector component
@@ -52,29 +53,73 @@ export const ShakeDetector: React.FC<ShakeDetectorProps> = ({
   timeout = 1000,
   disabled = false,
 }) => {
-  const shakeInstanceRef = useRef<any>(null);
+  const { openModal } = useFeedback();
 
   useEffect(() => {
     if (disabled || typeof window === "undefined") return;
 
-    const initShake = async () => {
-      try {
-        // For now, use a simple implementation without dynamic import
-        // TODO: Implement shake detection or load shake.js
-        console.log("Shake detector initialized");
-      } catch (error) {
-        console.warn("Shake detection not available:", error);
+    let shakeCount = 0;
+    let lastTime = 0;
+    let lastX = 0;
+    let lastY = 0;
+    let lastZ = 0;
+
+    const handleDeviceMotion = (event: DeviceMotionEvent) => {
+      const acceleration = event.accelerationIncludingGravity;
+      if (!acceleration) return;
+
+      const currentTime = Date.now();
+      if (currentTime - lastTime < 100) return; // Throttle to 10fps
+
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+
+      const x = acceleration.x || 0;
+      const y = acceleration.y || 0;
+      const z = acceleration.z || 0;
+
+      const deltaX = Math.abs(x - lastX);
+      const deltaY = Math.abs(y - lastY);
+      const deltaZ = Math.abs(z - lastZ);
+
+      const shakeIntensity = (deltaX + deltaY + deltaZ) / deltaTime / 10000;
+
+      if (shakeIntensity > threshold) {
+        shakeCount++;
+
+        if (shakeCount >= threshold) {
+          shakeCount = 0;
+          if (openModal) {
+            openModal();
+          }
+        }
+      } else {
+        shakeCount = Math.max(0, shakeCount - 1);
       }
+
+      lastX = x;
+      lastY = y;
+      lastZ = z;
     };
 
-    initShake();
+    // Request permission on iOS 13+
+    if (typeof (DeviceMotionEvent as any).requestPermission === "function") {
+      (DeviceMotionEvent as any)
+        .requestPermission()
+        .then((permissionState: string) => {
+          if (permissionState === "granted") {
+            window.addEventListener("devicemotion", handleDeviceMotion);
+          }
+        })
+        .catch(console.error);
+    } else {
+      window.addEventListener("devicemotion", handleDeviceMotion);
+    }
 
     return () => {
-      if (shakeInstanceRef.current?.stop) {
-        shakeInstanceRef.current.stop();
-      }
+      window.removeEventListener("devicemotion", handleDeviceMotion);
     };
-  }, [onShake, threshold, timeout, disabled]);
+  }, [threshold, openModal, disabled]);
 
   // This component doesn't render anything
   return null;

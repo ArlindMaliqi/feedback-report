@@ -61,12 +61,12 @@ interface FeedbackGroup {
  * ```
  */
 export function useFeedbackHistory(options: FeedbackHistoryOptions = {}) {
-  const { feedbacks } = useFeedback();
+  const { feedbacks = [] } = useFeedback();
   const { limit, filter, sortDirection = 'desc' } = options;
   
   // Process the feedback items with filtering and sorting
   const feedbackItems = useMemo(() => {
-    let items = [...feedbacks];
+    let items = [...(feedbacks || [])];
     
     // Apply filter if provided
     if (filter) {

@@ -1,6 +1,5 @@
 /**
- * Bundle optimization utilities and tree-shaking helpers
- * @module utils/bundleOptimization
+ * Bundle optimization utilities for better performance
  */
 
 /**
@@ -30,35 +29,29 @@ export const conditionalImport = async <T>(
 };
 
 /**
- * Feature flags for tree-shaking optimization
+ * Feature flags for conditional loading
  * These help bundlers eliminate unused code
  */
 export const FEATURE_FLAGS = {
-  // Core features (always included)
+  // Core features
   CORE_FEEDBACK: true,
+  SHAKE_DETECTION: true,
+  OFFLINE_SUPPORT: true,
+  ANALYTICS: true,
   
-  // Optional features (can be tree-shaken)
-  SHAKE_DETECTION: typeof window !== 'undefined',
+  // Optional features
+  ISSUE_TRACKER: false,
+  WEBHOOKS: false,
+  NOTIFICATIONS: false,
   FILE_ATTACHMENTS: true,
   USER_IDENTITY: true,
   CATEGORIES: true,
-  OFFLINE_SUPPORT: true,
-  VOTING: true,
   THEMES: true,
-  ANIMATIONS: true,
   
-  // Integration features (tree-shakeable)
-  ANALYTICS: false, // Only included when explicitly configured
-  ISSUE_TRACKER: false, // Only included when explicitly configured
-  WEBHOOKS: false, // Only included when explicitly configured
-  NOTIFICATIONS: false, // Only included when explicitly configured
-  
-  // Development features (excluded in production)
-  TESTING_UTILS: process.env.NODE_ENV !== 'production',
-  STORYBOOK: process.env.STORYBOOK === 'true',
-  
-  // Framework examples (excluded in production)
-  EXAMPLES: process.env.NODE_ENV !== 'production',
+  // Development features
+  TESTING_UTILS: process.env.NODE_ENV === 'development',
+  STORYBOOK: process.env.NODE_ENV === 'development',
+  EXAMPLES: process.env.NODE_ENV === 'development'
 } as const;
 
 /**
@@ -196,7 +189,7 @@ export const detectRuntimeCapabilities = () => ({
   // Device capabilities
   hasDeviceMotion: typeof DeviceMotionEvent !== 'undefined',
   hasVibration: navigator.vibrate !== undefined,
-  hasCamera: navigator.mediaDevices !== undefined,
+  hasCamera: typeof navigator.mediaDevices !== 'undefined',
   hasTouch: 'ontouchstart' in window,
   
   // Network capabilities
@@ -309,3 +302,17 @@ export const BundleAnalyzer: {
     return recommendations;
   }
 };
+
+// Dynamic imports for heavy features
+export const loadAnalytics = () => import('../integrations/analytics');
+export const loadShakeDetection = () => import('../hooks/useShakeDetection');
+export const loadOfflineStorage = () => import('../utils/offlineStorage');
+
+// Bundle size tracking
+export const getBundleSizeEstimate = () => ({
+  core: '~15KB',
+  analytics: '~8KB',
+  integrations: '~12KB',
+  templates: '~5KB',
+  total: '~40KB (gzipped)'
+});

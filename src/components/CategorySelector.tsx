@@ -2,7 +2,7 @@
  * Category selector component for feedback categorization
  * @module components/CategorySelector
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { FeedbackCategory, FeedbackSubcategory } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
@@ -65,19 +65,19 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   }, [selectedCategory, selectedSubcategory, selectedCat, selectedSubcat]);
 
   // Handle category change
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCategory = e.target.value;
-    setSelectedCat(newCategory);
+  const handleCategoryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const categoryId = e.target.value;
+    setSelectedCat(categoryId);
     setSelectedSubcat(undefined);
-    onSelectionChange(newCategory, undefined);
-  };
+    onSelectionChange(categoryId, undefined); // Reset subcategory when category changes
+  }, [onSelectionChange]);
 
   // Handle subcategory change
-  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newSubcategory = e.target.value;
-    setSelectedSubcat(newSubcategory || undefined);
-    onSelectionChange(selectedCat, newSubcategory || undefined);
-  };
+  const handleSubcategoryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const subcategoryId = e.target.value;
+    setSelectedSubcat(subcategoryId || undefined);
+    onSelectionChange(selectedCat, subcategoryId || undefined);
+  }, [onSelectionChange, selectedCat]);
 
   // Base styles with theme support
   const styles = {
@@ -110,6 +110,12 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
       color: theme === 'dark' ? '#9ca3af' : '#718096',
     }
   };
+
+  const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
+
+  if (categories.length === 0) {
+    return null;
+  }
 
   return (
     <div style={styles.container}>

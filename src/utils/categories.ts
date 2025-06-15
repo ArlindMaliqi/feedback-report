@@ -13,118 +13,150 @@ export const DEFAULT_CATEGORIES: FeedbackCategory[] = [
     id: 'bug',
     name: 'Bug Report',
     description: 'Report a problem or issue',
+    icon: '🐛',
+    color: '#dc2626',
     subcategories: [
-      { id: 'ui', name: 'User Interface', description: 'Visual or layout issues' },
-      { id: 'functionality', name: 'Functionality', description: 'Feature not working as expected' },
-      { id: 'performance', name: 'Performance', description: 'Slow loading or responsiveness issues' }
+      {
+        id: 'ui',
+        name: 'User Interface',
+        description: 'Visual or layout issues',
+        icon: '🎨'
+      },
+      {
+        id: 'performance',
+        name: 'Performance',
+        description: 'Slow or unresponsive behavior',
+        icon: '⚡'
+      },
+      {
+        id: 'functionality',
+        name: 'Functionality',
+        description: 'Feature not working as expected',
+        icon: '⚙️'
+      },
+      {
+        id: 'data',
+        name: 'Data Issues',
+        description: 'Incorrect or missing data',
+        icon: '📊'
+      }
     ]
   },
   {
     id: 'feature',
     name: 'Feature Request',
-    description: 'Suggest a new feature',
+    description: 'Suggest a new feature or improvement',
+    icon: '💡',
+    color: '#2563eb',
     subcategories: [
-      { id: 'enhancement', name: 'Enhancement', description: 'Improve existing functionality' },
-      { id: 'new-feature', name: 'New Feature', description: 'Completely new functionality' }
+      {
+        id: 'enhancement',
+        name: 'Enhancement',
+        description: 'Improve existing feature',
+        icon: '⬆️'
+      },
+      {
+        id: 'new-feature',
+        name: 'New Feature',
+        description: 'Add completely new functionality',
+        icon: '✨'
+      },
+      {
+        id: 'integration',
+        name: 'Integration',
+        description: 'Connect with external services',
+        icon: '🔗'
+      }
     ]
   },
   {
     id: 'improvement',
     name: 'Improvement',
-    description: 'Suggest an improvement',
+    description: 'Suggest improvements to existing features',
+    icon: '📈',
+    color: '#059669',
     subcategories: [
-      { id: 'usability', name: 'Usability', description: 'Make something easier to use' },
-      { id: 'accessibility', name: 'Accessibility', description: 'Improve accessibility features' }
+      {
+        id: 'usability',
+        name: 'Usability',
+        description: 'Make features easier to use',
+        icon: '👥'
+      },
+      {
+        id: 'accessibility',
+        name: 'Accessibility',
+        description: 'Improve accessibility support',
+        icon: '♿'
+      },
+      {
+        id: 'design',
+        name: 'Design',
+        description: 'Visual and UX improvements',
+        icon: '🎨'
+      }
     ]
   },
   {
     id: 'question',
     name: 'Question',
-    description: 'Ask a question',
+    description: 'Ask questions or request help',
+    icon: '❓',
+    color: '#7c3aed',
     subcategories: [
-      { id: 'how-to', name: 'How To', description: 'How to use a feature' },
-      { id: 'general', name: 'General', description: 'General questions' }
+      {
+        id: 'how-to',
+        name: 'How To',
+        description: 'Learn how to use features',
+        icon: '📚'
+      },
+      {
+        id: 'clarification',
+        name: 'Clarification',
+        description: 'Need clarification on behavior',
+        icon: '🤔'
+      }
     ]
   },
   {
     id: 'other',
     name: 'Other',
-    description: 'Something else',
+    description: 'General feedback or questions',
+    icon: '💬',
+    color: '#6b7280',
     subcategories: []
   }
 ];
 
 /**
- * Gets a category by ID
- * @param categories - Array of categories to search
- * @param categoryId - ID of the category to find
- * @returns The matching category or undefined if not found
+ * Get category by ID
  */
-export const getCategoryById = (
-  categories: FeedbackCategory[],
-  categoryId: string
-): FeedbackCategory | undefined => {
-  return categories.find(category => category.id === categoryId);
+export const getCategoryById = (id: string): FeedbackCategory | undefined => {
+  return DEFAULT_CATEGORIES.find(category => category.id === id);
 };
 
 /**
- * Gets a subcategory by ID within a specific category
- * @param categories - Array of categories to search
- * @param categoryId - ID of the parent category
- * @param subcategoryId - ID of the subcategory to find
- * @returns The matching subcategory or undefined if not found
+ * Get subcategory by category and subcategory ID
  */
-export const getSubcategoryById = (
-  categories: FeedbackCategory[],
-  categoryId: string,
-  subcategoryId: string
-) => {
-  const category = getCategoryById(categories, categoryId);
-  if (!category || !category.subcategories) return undefined;
-  
-  return category.subcategories.find(sub => sub.id === subcategoryId);
+export const getSubcategoryById = (categoryId: string, subcategoryId: string) => {
+  const category = getCategoryById(categoryId);
+  return category?.subcategories?.find(sub => sub.id === subcategoryId);
 };
 
 /**
- * Maps legacy type values to expanded category IDs
- * @param type - Legacy feedback type
- * @returns Corresponding category ID
+ * Get all categories with their subcategories flattened
  */
-export const mapTypeToCategory = (
-  type: 'bug' | 'feature' | 'improvement' | 'other'
-): string => {
-  switch (type) {
-    case 'bug':
-      return 'bug';
-    case 'feature':
-      return 'feature';
-    case 'improvement':
-      return 'usability';
-    case 'other':
-    default:
-      return 'other';
-  }
-};
-
-/**
- * Gets the display name for a category and subcategory combination
- * @param categories - Array of categories
- * @param categoryId - ID of the category
- * @param subcategoryId - ID of the subcategory (optional)
- * @returns Formatted display string, e.g. "Bug Report: App Crash"
- */
-export const getCategoryDisplayName = (
-  categories: FeedbackCategory[],
-  categoryId: string,
-  subcategoryId?: string
-): string => {
-  const category = getCategoryById(categories, categoryId);
-  if (!category) return 'Unknown';
+export const getFlattenedCategories = () => {
+  const flattened: Array<{ category: FeedbackCategory; subcategory?: any }> = [];
   
-  if (!subcategoryId) return category.name;
+  DEFAULT_CATEGORIES.forEach(category => {
+    flattened.push({ category });
+    
+    if (category.subcategories) {
+      category.subcategories.forEach(subcategory => {
+        flattened.push({ category, subcategory });
+      });
+    }
+  });
   
-  const subcategory = getSubcategoryById(categories, categoryId, subcategoryId);
-  if (!subcategory) return category.name;
-  
-  return `${category.name}: ${subcategory.name}`;
+  return flattened;
 };

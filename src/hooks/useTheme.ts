@@ -3,25 +3,14 @@ import { ThemeContext } from '../contexts/ThemeContext';
 import type { ThemeContextType } from '../types';
 
 /**
- * Custom hook to access the current theme
+ * Hook for accessing theme context
  * 
- * This hook provides access to the current theme setting (light or dark)
- * based on system preferences or website theme settings.
- * 
- * @returns ThemeContextType object containing theme state
+ * @returns Theme context with current theme and theme controls
  * @throws Error if used outside of ThemeProvider
  * 
  * @example
- * ```typescript
- * function MyComponent() {
- *   const { theme } = useTheme();
- *   
- *   return (
- *     <div>
- *       Current theme: {theme}
- *     </div>
- *   );
- * }
+ * ```tsx
+ * const { theme, isDark, toggleTheme } = useTheme();
  * ```
  */
 export const useTheme = (): ThemeContextType => {

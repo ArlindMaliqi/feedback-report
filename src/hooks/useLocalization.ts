@@ -6,7 +6,8 @@
  * @since 1.2.0
  */
 
-import { useMemo, useEffect, useState } from 'react';
+import { useContext, useMemo, useEffect, useState } from 'react';
+import { LocalizationContext } from '../contexts/FeedbackContext';
 import { 
   createTranslator, 
   getDirection, 
@@ -44,6 +45,10 @@ interface LocalizationHookReturn {
   error: string | null;
   /** Function to change locale dynamically */
   setLocale: (locale: SupportedLocale) => void;
+  /** Format date according to the current locale */
+  formatDate: (date: Date) => string;
+  /** Format number according to the current locale */
+  formatNumber: (num: number) => string;
 }
 
 /**
@@ -54,6 +59,8 @@ interface LocalizationHookReturn {
  * @since 2.0.0
  */
 export const useLocalization = (options: UseLocalizationOptions = { locale: 'en' }): LocalizationHookReturn => {
+  const context = useContext(LocalizationContext);
+  
   const {
     locale: initialLocale,
     fallbackLocale = 'en',
@@ -125,14 +132,40 @@ export const useLocalization = (options: UseLocalizationOptions = { locale: 'en'
     setCurrentLocale(locale);
   }, []);
 
+  const locale = context?.locale || options.locale || 'en';
+  const dir = context?.dir || ((['ar', 'he'].includes(locale)) ? 'rtl' : 'ltr');
+  const t = context?.t || ((key: string) => key);
+
+  const formatDate = useMemo(() => {
+    return (date: Date) => {
+      try {
+        return new Intl.DateTimeFormat(locale).format(date);
+      } catch {
+        return date.toLocaleDateString();
+      }
+    };
+  }, [locale]);
+
+  const formatNumber = useMemo(() => {
+    return (num: number) => {
+      try {
+        return new Intl.NumberFormat(locale).format(num);
+      } catch {
+        return num.toString();
+      }
+    };
+  }, [locale]);
+
   return {
     locale: currentLocale,
     direction,
-    t: translator,
+    t,
     isRTL: direction === 'rtl',
     loading,
     error,
-    setLocale
+    setLocale,
+    formatDate,
+    formatNumber
   };
 };
 
@@ -171,3 +204,4 @@ export const useDirection = (locale?: string) => {
     isLTR: direction === 'ltr'
   };
 };
+export default useLocalization;
