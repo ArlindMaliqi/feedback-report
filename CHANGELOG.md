@@ -1,3 +1,10 @@
+## [2.1.3](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.2...v2.1.3) (2025-06-15)
+
+
+### Bug Fixes
+
+* build compression updates for packages ([77645d4](https://github.com/ArlindMaliqi/feedback-report/commit/77645d4d046cc6f92973d2ea9b7d468d8039a81a))
+
 ## [2.1.2](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.1...v2.1.2) (2025-06-15)
 
 
