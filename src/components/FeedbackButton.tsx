@@ -19,7 +19,7 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
   };
 
   const baseClasses = `
-    fixed z-50 px-4 py-3 bg-blue-600 hover:bg-blue-700 
+    fixed z-50 bottom-4 right-4 px-4 py-3 bg-blue-600 hover:bg-blue-700 
     text-white font-medium rounded-full shadow-lg 
     transition-all duration-200 ease-in-out
     hover:shadow-xl transform hover:scale-105

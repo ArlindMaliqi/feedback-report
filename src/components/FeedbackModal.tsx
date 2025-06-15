@@ -281,7 +281,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             placeholder={field.placeholder}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full bg-white text-black placeholder:bg-zinc-200 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         );
 
@@ -307,7 +307,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             value={value}
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border bg-white border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Select an option</option>
             {field.options?.map((option: any) => (
@@ -326,7 +326,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               type="checkbox"
               checked={!!value}
               onChange={(e) => handleInputChange(field.id, e.target.checked)}
-              className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+              className="rounded bg-white text-black placeholder:bg-zinc-200 bg-white border-gray-300 focus:ring-2 bg-white focus:ring-blue-500"
             />
             <span>{field.label}</span>
           </label>

@@ -138,6 +138,7 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
           disabled={disabled}
           required={requiredFields.includes('name')}
           aria-required={requiredFields.includes('name')}
+          className="bg-white text-black placeholder:bg-zinc-200"
           placeholder="Your name"
         />
       </div>

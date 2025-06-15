@@ -290,6 +290,7 @@ export const FileAttachmentInput: React.FC<FileAttachmentInputProps> = ({
         onChange={handleFileChange}
         style={{ display: 'none' }}
         accept={allowedTypes.join(',')}
+        className='bg-white text-black placeholder:bg-zinc-200'
         disabled={!canAddMoreAttachments || disabled}
       />
     </div>
