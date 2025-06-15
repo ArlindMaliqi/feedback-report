@@ -346,54 +346,278 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="feedback-modal-overlay"
       onClick={handleBackdropClick}
       style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999999, // Extremely high z-index
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
+        padding: '20px',
+        boxSizing: 'border-box',
         ...getAnimationStyles(animation, !isClosing),
       }}
     >
+      <style>
+        {`
+          .feedback-modal-overlay * {
+            box-sizing: border-box;
+          }
+          .feedback-modal-container {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.5;
+          }
+          .feedback-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            background-color: #fafafa;
+            color: #111827;
+            transition: all 0.2s ease;
+            outline: none;
+            font-family: inherit;
+          }
+          .feedback-input:focus {
+            border-color: #3b82f6;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+          .feedback-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+          .feedback-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+          }
+          .feedback-button-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+          }
+          .feedback-button-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+          }
+          .feedback-button-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+          }
+          .feedback-button-secondary {
+            background: white;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .feedback-button-secondary:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes slideUp {
+            from { 
+              opacity: 0; 
+              transform: translateY(20px) scale(0.95); 
+            }
+            to { 
+              opacity: 1; 
+              transform: translateY(0) scale(1); 
+            }
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+      
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4"
-        dir={dir}
+        className="feedback-modal-container"
         style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '0',
+          maxWidth: '520px',
+          width: '100%',
+          maxHeight: '90vh',
+          overflow: 'hidden',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+          animation: 'slideUp 0.3s ease-out',
           ...getAnimationStyles(animation, !isClosing),
         }}
+        dir={dir}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {template.name}
-          </h2>
+        <div style={{ 
+          padding: '24px 24px 20px 24px',
+          borderBottom: '1px solid #f3f4f6',
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center'
+        }}>
+          <div>
+            <h2 style={{ 
+              margin: 0, 
+              fontSize: '20px', 
+              fontWeight: '600',
+              color: '#111827',
+              lineHeight: '1.3'
+            }}>
+              💬 {template.name}
+            </h2>
+            <p style={{ 
+              margin: '4px 0 0 0', 
+              fontSize: '14px', 
+              color: '#6b7280',
+              lineHeight: '1.4'
+            }}>
+              {template.description || 'Help us improve by sharing your thoughts'}
+            </p>
+          </div>
           <button
             onClick={handleCloseModal}
-            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+            style={{
+              border: 'none',
+              background: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#9ca3af',
+              padding: '4px',
+              borderRadius: '8px',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f3f4f6';
+              e.currentTarget.style.color = '#6b7280';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#9ca3af';
+            }}
             aria-label="Close modal"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            ×
           </button>
         </div>
-
+        
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} style={{ padding: '24px', overflowY: 'auto', maxHeight: 'calc(90vh - 140px)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
             {/* Template fields */}
             {template.fields.map((field: TemplateField) => {
               if (field.type === 'checkbox') {
-                return renderField(field);
+                return (
+                  <label key={field.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      id={field.id}
+                      type="checkbox"
+                      checked={!!formData[field.id]}
+                      onChange={(e) => handleInputChange(field.id, e.target.checked)}
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        accentColor: '#3b82f6',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <span style={{ fontSize: '14px', color: '#374151' }}>{field.label}</span>
+                  </label>
+                );
               }
 
               return (
                 <div key={field.id}>
-                  <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor={field.id} className="feedback-label">
                     {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                    {field.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
                   </label>
-                  {renderField(field)}
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      id={field.id}
+                      value={formData[field.id] || ''}
+                      onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      className="feedback-input"
+                      rows={4}
+                      style={{ 
+                        resize: 'vertical',
+                        minHeight: '120px',
+                        lineHeight: '1.5'
+                      }}
+                    />
+                  ) : field.type === 'select' ? (
+                    <select
+                      id={field.id}
+                      value={formData[field.id] || ''}
+                      onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      required={field.required}
+                      className="feedback-input"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="">Select an option</option>
+                      {field.options?.map((option: any) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id={field.id}
+                      type={field.type}
+                      value={formData[field.id] || ''}
+                      onChange={(e) => handleInputChange(field.id, e.target.value)}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      className="feedback-input"
+                    />
+                  )}
+                  {field.helpText && (
+                    <p style={{ 
+                      fontSize: '12px', 
+                      color: '#6b7280', 
+                      margin: '6px 0 0 0',
+                      lineHeight: '1.4'
+                    }}>
+                      {field.helpText}
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -411,51 +635,82 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             />
 
             {/* User identity fields */}
-            <UserIdentityFields
-              value={formData.user}
-              onChange={(user: any) => handleInputChange('user', user)}
-            />
+            {config.collectUserIdentity && (
+              <UserIdentityFields
+                value={formData.user}
+                onChange={(user: any) => handleInputChange('user', user)}
+                config={config}
+              />
+            )}
 
             {/* File attachments */}
-            <FileAttachmentInput
-              attachments={attachments}
-              onAttachmentsChange={handleAttachmentsChange}
-              config={{
-                maxAttachments: 5,
-                maxAttachmentSize: 5 * 1024 * 1024,
-                allowedAttachmentTypes: ['image/*', 'application/pdf', 'text/*']
-              }}
-            />
+            {config.enableFileAttachments && (
+              <FileAttachmentInput
+                attachments={attachments}
+                onAttachmentsChange={handleAttachmentsChange}
+                config={{
+                  maxAttachments: config.maxAttachments || 5,
+                  maxAttachmentSize: config.maxFileSize || 5 * 1024 * 1024,
+                  allowedAttachmentTypes: config.allowedAttachmentTypes || ['image/*', 'application/pdf', 'text/*']
+                }}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Error display */}
             {shouldShowInternalError && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{submitError}</p>
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '10px',
+                color: '#dc2626'
+              }}>
+                <p style={{ margin: 0, fontSize: '14px' }}>{submitError}</p>
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            marginTop: '32px',
+            paddingTop: '20px',
+            borderTop: '1px solid #f3f4f6'
+          }}>
             <button
               type="button"
               onClick={handleCloseModal}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isSubmitting}
+              className="feedback-button-secondary"
+              style={{ flex: '1' }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={
-                !isFormValid || 
-                isSubmitting || 
-                template.fields
-                  .filter((field: TemplateField) => field.required)
-                  .some((field: TemplateField) => !formData[field.id])
-              }
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!isFormValid || isSubmitting}
+              className="feedback-button-primary"
+              style={{ flex: '2' }}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+              {isSubmitting ? (
+                <>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  📤 Send Feedback
+                </>
+              )}
             </button>
           </div>
         </form>

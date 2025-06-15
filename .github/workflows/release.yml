@@ -78,6 +78,13 @@ jobs:
       - name: Verify package integrity
         run: npm audit signatures
 
+      - name: Pre-release version sync
+        run: |
+          # Update package.github.json with current version before release
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version before release: $CURRENT_VERSION"
+          jq ".version = \"$CURRENT_VERSION\"" package.github.json > temp.json && mv temp.json package.github.json
+
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.WRITE_TOKEN }}
@@ -86,6 +93,22 @@ jobs:
           GH_TOKEN: ${{ secrets.WRITE_TOKEN }}
         run: npx semantic-release
 
+      - name: Post-release version sync
+        run: |
+          # After semantic-release, update package.github.json with the new version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "New version after release: $NEW_VERSION"
+          jq ".version = \"$NEW_VERSION\"" package.github.json > temp.json && mv temp.json package.github.json
+          
+          # Commit the updated package.github.json if version changed
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.github.json
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: sync package.github.json version to $NEW_VERSION [skip ci]"
+            git push
+          fi
+
   publish-github-packages:
     needs: release
     runs-on: ubuntu-latest
@@ -93,6 +116,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.WRITE_TOKEN }}
 
       - name: Set up Node.js for GitHub Packages
         uses: actions/setup-node@v4
@@ -109,6 +135,9 @@ jobs:
 
       - name: Create GitHub Package configuration with synchronized version
         run: |
+          # Pull latest changes to get the updated version
+          git pull origin main
+          
           # Extract version from main package.json
           NPM_VERSION=$(node -p "require('./package.json').version")
           echo "Using version: $NPM_VERSION"

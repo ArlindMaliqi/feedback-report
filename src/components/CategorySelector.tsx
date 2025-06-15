@@ -4,7 +4,6 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Category, Subcategory } from '../types';
-import { useTheme } from '../hooks/useTheme';
 
 export interface CategorySelectorProps {
   /** Array of available categories */
@@ -23,11 +22,6 @@ export interface CategorySelectorProps {
 
 /**
  * Component for selecting feedback categories and subcategories
- * 
- * Provides a user-friendly interface for categorizing feedback
- * with a two-level hierarchy of categories and subcategories.
- * 
- * @param props - Component props
  */
 export const CategorySelector: React.FC<CategorySelectorProps> = ({
   categories,
@@ -37,7 +31,6 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   disabled = false,
   className = ''
 }) => {
-  const { theme } = useTheme();
   const [selectedCat, setSelectedCat] = useState<string>(selectedCategory || '');
   const [selectedSubcat, setSelectedSubcat] = useState<string | undefined>(selectedSubcategory);
   const [availableSubcategories, setAvailableSubcategories] = useState<Subcategory[]>([]);
@@ -109,107 +102,125 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     }
   }, [selectedCategory, selectedSubcategory, categories, onSelectionChange]);
 
-  // Base styles with theme support
-  const styles = {
-    container: {
-      marginBottom: '1rem',
-    },
-    categorySelector: {
-      marginBottom: '0.5rem',
-    },
-    label: {
-      display: 'block' as const,
-      marginBottom: '0.25rem',
-      color: theme === 'dark' ? '#e5e7eb' : 'inherit',
-    },
-    select: {
-      width: '100%',
-      padding: '0.5rem',
-      borderRadius: '4px',
-      border: `1px solid ${theme === 'dark' ? '#4b5563' : '#ccc'}`,
-      backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
-      color: theme === 'dark' ? '#e5e7eb' : 'inherit',
-    },
-    categoryOption: (category: Category) => ({
-      backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
-      color: category.color || (theme === 'dark' ? '#e5e7eb' : '#374151'),
-    }),
-    helpText: {
-      fontSize: '0.75rem',
-      marginTop: '0.25rem',
-      color: theme === 'dark' ? '#9ca3af' : '#718096',
-    }
-  };
-
-  const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
-
   if (categories.length === 0) {
     return null;
   }
 
   return (
-    <div style={styles.container} className={className}>
-      <div style={styles.categorySelector}>
-        <label htmlFor="feedback-category" style={styles.label}>
-          Category *
-        </label>
-        <select
-          id="feedback-category"
-          value={selectedCat}
-          onChange={handleCategoryChange}
-          style={styles.select}
-          disabled={disabled}
-          required
-          aria-required="true"
-        >
-          <option value="" disabled>Select a category</option>
-          {categories.map(category => (
-            <option 
-              key={category.id} 
-              value={category.id}
-              style={styles.categoryOption(category)}
-            >
-              {category.icon ? `${category.icon} ` : ''}{category.name}
-            </option>
-          ))}
-        </select>
-        {selectedCat && (
-          <p style={styles.helpText}>
-            {categories.find(c => c.id === selectedCat)?.description}
-          </p>
-        )}
-      </div>
+    <>
+      <style>
+        {`
+          .feedback-category-container * {
+            box-sizing: border-box;
+          }
+          .feedback-category-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          }
+          .feedback-category-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            background-color: #fafafa;
+            color: #111827;
+            transition: all 0.2s ease;
+            outline: none;
+            font-family: inherit;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+          }
+          .feedback-category-select:focus {
+            border-color: #3b82f6;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+          .feedback-category-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f3f4f6;
+          }
+          .feedback-category-help {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+            line-height: 1.4;
+          }
+        `}
+      </style>
       
-      {availableSubcategories.length > 0 && (
-        <div>
-          <label htmlFor="feedback-subcategory" style={styles.label}>
-            Subcategory
+      <div className={`feedback-category-container ${className}`} style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <label htmlFor="feedback-category" className="feedback-category-label">
+            📂 Category <span style={{ color: '#ef4444' }}>*</span>
           </label>
           <select
-            id="feedback-subcategory"
-            value={selectedSubcat || ''}
-            onChange={handleSubcategoryChange}
-            style={styles.select}
+            id="feedback-category"
+            value={selectedCat}
+            onChange={handleCategoryChange}
+            className="feedback-category-select"
             disabled={disabled}
+            required
+            aria-required="true"
           >
-            <option value="">Select a subcategory (optional)</option>
-            {availableSubcategories.map(subcategory => (
+            <option value="" disabled>Select a category</option>
+            {categories.map(category => (
               <option 
-                key={subcategory.id} 
-                value={subcategory.id}
+                key={category.id} 
+                value={category.id}
               >
-                {subcategory.name}
+                {category.icon ? `${category.icon} ` : ''}{category.name}
               </option>
             ))}
           </select>
-          {selectedSubcat && (
-            <p style={styles.helpText}>
-              {availableSubcategories.find(s => s.id === selectedSubcat)?.description}
+          {selectedCat && (
+            <p className="feedback-category-help">
+              {categories.find(c => c.id === selectedCat)?.description}
             </p>
           )}
         </div>
-      )}
-    </div>
+        
+        {availableSubcategories.length > 0 && (
+          <div>
+            <label htmlFor="feedback-subcategory" className="feedback-category-label">
+              🏷️ Subcategory (Optional)
+            </label>
+            <select
+              id="feedback-subcategory"
+              value={selectedSubcat || ''}
+              onChange={handleSubcategoryChange}
+              className="feedback-category-select"
+              disabled={disabled}
+            >
+              <option value="">Select a subcategory (optional)</option>
+              {availableSubcategories.map(subcategory => (
+                <option 
+                  key={subcategory.id} 
+                  value={subcategory.id}
+                >
+                  {subcategory.icon ? `${subcategory.icon} ` : ''}{subcategory.name}
+                </option>
+              ))}
+            </select>
+            {selectedSubcat && (
+              <p className="feedback-category-help">
+                {availableSubcategories.find(s => s.id === selectedSubcat)?.description}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
