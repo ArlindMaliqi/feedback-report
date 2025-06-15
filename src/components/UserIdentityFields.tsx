@@ -4,8 +4,6 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import type { UserIdentity, FeedbackConfig } from '../types';
-import { getUserIdentity, saveUserIdentity } from '../utils/offlineStorage';
-import { useTheme } from '../hooks/useTheme';
 
 /**
  * Props for the UserIdentityFields component
@@ -24,15 +22,12 @@ interface UserIdentityFieldsProps {
   disabled?: boolean;
   /** Whether the avatar field should be shown */
   showAvatar?: boolean;
+  /** Theme preference */
+  theme?: 'light' | 'dark' | 'system';
 }
 
 /**
  * Component for collecting user identity information in feedback forms
- * 
- * Allows users to provide optional or required identity information
- * like name and email when submitting feedback.
- * 
- * @param props - Component props
  */
 export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
   value = {},
@@ -40,86 +35,96 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
   config = {},
   disabled = false,
   showAvatar = false,
+  theme = 'light'
 }) => {
-  const { theme } = useTheme();
   const [rememberIdentity, setRememberIdentity] = useState<boolean>(
     config.rememberUserIdentity !== false
   );
   
-  // Load saved identity on mount if remembered
-  useEffect(() => {
-    if (config.rememberUserIdentity !== false) {
-      const savedIdentity = getUserIdentity();
-      if (savedIdentity) {
-        onChange(savedIdentity);
-      }
-    }
-  }, [config.rememberUserIdentity, onChange]);
-
   // Handle field change
   const handleFieldChange = (field: keyof UserIdentity, fieldValue: string) => {
     const currentValue = value || {};
     const updatedIdentity = { ...currentValue, [field]: fieldValue };
     onChange(updatedIdentity);
-    
-    // Save to storage if remember is enabled
-    if (rememberIdentity) {
-      saveUserIdentity(updatedIdentity);
-    }
   };
 
   // Handle remember checkbox change
   const handleRememberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRememberIdentity(e.target.checked);
-    
-    if (e.target.checked) {
-      // Save current identity
-      saveUserIdentity(value);
-    }
   };
 
   // Required fields
   const requiredFields = config.requiredIdentityFields || [];
 
-  // Base styles with theme support
+  // Enhanced styles
   const styles = {
     container: {
-      marginBottom: '1rem',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '16px',
+      padding: '20px',
+      backgroundColor: theme === 'dark' ? '#1f2937' : '#f9fafb',
+      borderRadius: '12px',
+      border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`,
     },
     fieldGroup: {
-      marginBottom: '0.5rem',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '6px',
     },
     label: {
-      display: 'block' as const,
-      marginBottom: '0.25rem',
-      color: theme === 'dark' ? '#e5e7eb' : 'inherit',
-      fontWeight: 'normal' as const,
+      fontSize: '14px',
+      fontWeight: '500' as const,
+      color: theme === 'dark' ? '#f3f4f6' : '#374151',
+      marginBottom: '2px',
     },
     input: {
       width: '100%',
-      padding: '0.5rem',
-      borderRadius: '4px',
-      border: `1px solid ${theme === 'dark' ? '#4b5563' : '#ccc'}`,
-      backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
-      color: theme === 'dark' ? '#e5e7eb' : 'inherit',
+      padding: '12px 16px',
+      borderRadius: '8px',
+      border: `2px solid ${theme === 'dark' ? '#4b5563' : '#e5e7eb'}`,
+      backgroundColor: theme === 'dark' ? '#111827' : 'white',
+      color: theme === 'dark' ? '#f3f4f6' : '#111827',
+      fontSize: '14px',
+      transition: 'all 0.2s ease',
+      outline: 'none',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      boxSizing: 'border-box' as const,
     },
     checkboxContainer: {
       display: 'flex',
       alignItems: 'center',
-      marginTop: '0.5rem',
+      gap: '8px',
+      padding: '12px 0',
     },
     checkbox: {
-      marginRight: '0.5rem',
-      accentColor: theme === 'dark' ? '#3b82f6' : '#007bff',
+      width: '16px',
+      height: '16px',
+      accentColor: '#3b82f6',
     },
     checkboxLabel: {
-      fontSize: '0.875rem',
+      fontSize: '14px',
       color: theme === 'dark' ? '#d1d5db' : '#4b5563',
     },
     privacyText: {
-      fontSize: '0.75rem',
-      marginTop: '0.5rem',
-      color: theme === 'dark' ? '#9ca3af' : '#718096',
+      fontSize: '12px',
+      color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+      lineHeight: '1.4',
+      padding: '8px 12px',
+      backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6',
+      borderRadius: '6px',
+      border: `1px solid ${theme === 'dark' ? '#4b5563' : '#e5e7eb'}`,
+    }
+  };
+
+  const inputFocusProps = {
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+      e.currentTarget.style.borderColor = '#3b82f6';
+      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      e.currentTarget.style.borderColor = theme === 'dark' ? '#4b5563' : '#e5e7eb';
+      e.currentTarget.style.boxShadow = 'none';
     }
   };
 
@@ -127,7 +132,7 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
     <div style={styles.container}>
       <div style={styles.fieldGroup}>
         <label htmlFor="feedback-user-name" style={styles.label}>
-          Name {requiredFields.includes('name') && '*'}
+          Name {requiredFields.includes('name') && <span style={{ color: '#ef4444' }}>*</span>}
         </label>
         <input
           type="text"
@@ -137,15 +142,14 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
           style={styles.input}
           disabled={disabled}
           required={requiredFields.includes('name')}
-          aria-required={requiredFields.includes('name')}
-          className="bg-white text-black placeholder:bg-zinc-200"
-          placeholder="Your name"
+          placeholder="Your full name"
+          {...inputFocusProps}
         />
       </div>
       
       <div style={styles.fieldGroup}>
         <label htmlFor="feedback-user-email" style={styles.label}>
-          Email {requiredFields.includes('email') && '*'}
+          Email {requiredFields.includes('email') && <span style={{ color: '#ef4444' }}>*</span>}
         </label>
         <input
           type="email"
@@ -155,8 +159,8 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
           style={styles.input}
           disabled={disabled}
           required={requiredFields.includes('email')}
-          aria-required={requiredFields.includes('email')}
           placeholder="your.email@example.com"
+          {...inputFocusProps}
         />
       </div>
 
@@ -173,6 +177,7 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
             style={styles.input}
             disabled={disabled}
             placeholder="https://example.com/avatar.jpg"
+            {...inputFocusProps}
           />
         </div>
       )}
@@ -196,9 +201,10 @@ export const UserIdentityFields: React.FC<UserIdentityFieldsProps> = ({
         </div>
       )}
       
-      <p style={styles.privacyText}>
-        Your information will only be used to follow up on your feedback if necessary.
-      </p>
+      <div style={styles.privacyText}>
+        🔒 Your information will only be used to follow up on your feedback if necessary. 
+        We respect your privacy and won't share your details with third parties.
+      </div>
     </div>
   );
 };
