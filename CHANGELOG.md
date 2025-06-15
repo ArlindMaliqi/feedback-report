@@ -1,3 +1,10 @@
+## [2.1.7](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.6...v2.1.7) (2025-06-15)
+
+
+### Bug Fixes
+
+* fix Next.js compatibility and add comprehensive JSDoc documentation ([41c6717](https://github.com/ArlindMaliqi/feedback-report/commit/41c67179535f5b4355c4782cacab8d409156aa41))
+
 ## [2.1.6](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.5...v2.1.6) (2025-06-15)
 
 
