@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.1...v2.1.2) (2025-06-15)
+
+
+### Bug Fixes
+
+* implement comprehensive third-party integrations and missing core features ([f7ae547](https://github.com/ArlindMaliqi/feedback-report/commit/f7ae547dc3bd9b0064e72b56ea99736f92eb299d))
+
 ## [2.1.1](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.0...v2.1.1) (2025-06-14)
 
 
