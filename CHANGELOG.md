@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.9...v2.2.0) (2025-06-15)
+
+
+### Features
+
+* modernize feedback components with consistent styling and improved UX ([654e33a](https://github.com/ArlindMaliqi/feedback-report/commit/654e33aa92278e8ac4018e831427b50472c62187))
+
 ## [2.1.9](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.8...v2.1.9) (2025-06-15)
 
 
