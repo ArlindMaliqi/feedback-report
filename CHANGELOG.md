@@ -1,3 +1,10 @@
+## [2.1.5](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.4...v2.1.5) (2025-06-15)
+
+
+### Bug Fixes
+
+* release, chore fixes ([a63b52c](https://github.com/ArlindMaliqi/feedback-report/commit/a63b52cd42fc21112df5ebc16dcbe59c054da0b0))
+
 ## [2.1.4](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.3...v2.1.4) (2025-06-15)
 
 
