@@ -1,3 +1,10 @@
+## [2.1.9](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.8...v2.1.9) (2025-06-15)
+
+
+### Bug Fixes
+
+* complete TypeScript fixes and comprehensive JSDoc documentation ([878c101](https://github.com/ArlindMaliqi/feedback-report/commit/878c101de549035fa5a329c8a8ebc573adf030fa))
+
 ## [2.1.8](https://github.com/ArlindMaliqi/feedback-report/compare/v2.1.7...v2.1.8) (2025-06-15)
 
 
